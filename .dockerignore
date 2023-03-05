@@ -10,6 +10,9 @@ ENV/
 env.bak/
 venv.bak/
 
+# Scrapy stuff:
+.scrapy
+
 # Django stuff:
 *.log
 local_settings.py

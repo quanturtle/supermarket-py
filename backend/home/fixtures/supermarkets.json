@@ -1,0 +1,42 @@
+[
+    {
+        "model": "home.supermarket",
+        "pk": 1,
+        "fields": {
+            "name": "Superseis",
+            "base_url": "https://www.superseis.com.py",
+            "base_url_https": "https://www.superseis.com.py",
+            "domain": "www.superseis.com.py"
+        }
+    },
+    {
+        "model": "home.supermarket",
+        "pk": 2,
+        "fields": {
+            "name": "Casa Rica",
+            "base_url": "http://casarica.com.py/",
+            "base_url_https": "https://casarica.com.py",
+            "domain": "www.casarica.com.py"
+        }
+    },
+    {
+        "model": "home.supermarket",
+        "pk": 3,
+        "fields": {
+            "name": "Arete",
+            "base_url": "http://www.arete.com.py",
+            "base_url_https": "https://www.arete.com.py",
+            "domain": "www.arete.com.py"
+        }
+    },
+    {
+        "model": "home.supermarket",
+        "pk": 4,
+        "fields": {
+            "name": "Stock",
+            "base_url": "http://www.stock.com.py",
+            "base_url_https": "https://www.stock.com.py",
+            "domain": "www.stock.com.py"
+        }
+    }
+]

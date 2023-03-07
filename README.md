@@ -14,9 +14,9 @@ A project that scrapes price data from paraguayan supermarkets
 └── product_scraper
 ```
 
-`backend`: a `django-rest` API for storing all of the information
-`linkgenerator`: simple `requests` scripts that extract all links from supermarkets landing pages, stores urls in the `backend`
-`product_scraper`: a `scrapy` project that has spiders that retrieves all urls stored in `backend` and finds all products in the supermarket website
+`backend`: a `django-rest` API for storing all of the information  
+`linkgenerator`: simple `requests` scripts that extract all links from supermarkets landing pages, stores urls in the `backend`  
+`product_scraper`: a `scrapy` project that has spiders that retrieves all urls stored in `backend` and finds all products in the supermarket website  
 
 ## Running the project
 WIP  

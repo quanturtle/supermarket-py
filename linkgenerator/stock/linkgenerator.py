@@ -1,5 +1,6 @@
 import requests
 from bs4 import BeautifulSoup
+from supermarket import Supermarket
 
 def main():
     base_url = "https://www.superseis.com.py/"
@@ -14,6 +15,6 @@ def main():
         href = link.get("href")
         if href is not None and href not in seen_links and 'category' in href:
             seen_links.add(href)
-            resp = requests.post('http://localhost:8000/api/link/', data={'supermarket': 4, 'url': href})
+            resp = requests.post('http://localhost:8000/api/link/', data={'supermarket': Supermarket.STOCK, 'url': href})
 
 main()

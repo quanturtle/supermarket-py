@@ -1,8 +1,11 @@
 import scrapy
 import requests
-from .supermarket import Supermarket
 from bs4 import BeautifulSoup
 import re
+
+from .supermarket import Supermarket
+# from items import ProductScraperItem
+from ..items import ProductScraperItem
 
 class SuperseisSpider(scrapy.Spider):
     name = "superseis"
@@ -48,13 +51,6 @@ class SuperseisSpider(scrapy.Spider):
             'current_price': price
         }
 
-        resp = requests.post('http://localhost:8000/api/product/', data=product_data)        
+        item = ProductScraperItem(**product_data)
 
-        yield {
-            'supermarket': supermarket,
-            'url': url,
-            'sku': sku, 
-            'name': name, 
-            'current_price': price,
-            'resp': resp.status_code,
-        }
+        yield item

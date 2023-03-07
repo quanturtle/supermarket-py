@@ -7,6 +7,8 @@ import scrapy
 
 
 class ProductScraperItem(scrapy.Item):
-    # define the fields for your item here like:
-    # name = scrapy.Field()
-    pass
+    supermarket = scrapy.Field()
+    url = scrapy.Field()
+    sku = scrapy.Field()
+    name = scrapy.Field()
+    current_price = scrapy.Field()

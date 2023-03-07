@@ -1,5 +1,6 @@
 from datetime import datetime
 from django.shortcuts import get_object_or_404
+from django_filters.rest_framework import DjangoFilterBackend
 
 from rest_framework.viewsets import ModelViewSet
 from rest_framework.response import Response
@@ -37,6 +38,8 @@ class SupermarketViewSet(ModelViewSet):
 class LinkViewSet(ModelViewSet):
     queryset = Link.objects.all()
     serializer_class = LinkSerializer
+    filter_backends = [DjangoFilterBackend]
+    filterset_fields = ['supermarket']
 
     def create(self, request):
         new_link = request.data
@@ -65,6 +68,8 @@ class LinkViewSet(ModelViewSet):
 class ProductViewSet(ModelViewSet):
     queryset = Product.objects.all()
     serializer_class = ProductSerializer
+    filter_backends = [DjangoFilterBackend]
+    filterset_fields = ['supermarket']
 
     def create(self, request):
         new_product = request.data

@@ -25,9 +25,15 @@ class SuperseisSpider(scrapy.Spider):
         soup = BeautifulSoup(response.text, 'html.parser')
         product_links = soup.find_all('a', class_= re.compile(r"^product-title-link"))     
 
+        # scrape product grid
         for link in product_links:
             if link.get('href') is not None:
                 yield scrapy.Request(url=link.get('href'), callback=self.parse_product)
+
+        # follow link to next page
+        next_button = soup.find('a', string="Siguiente")
+        if next_button is not None:
+            yield scrapy.Request(url=next_button.get('href'), callback=self.parse_category)
 
 
     def parse_product(self, response):

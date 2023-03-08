@@ -1,0 +1,34 @@
+version: '3.5'
+
+networks: 
+  supermarket_network:
+    name: supermarket_network
+
+services:
+  backend:
+    image: ./backend
+    container_name: backend
+    networks: 
+      - supermarket_network
+    restart: 
+     - on-failure
+    
+  linkgenerator:
+    build: ./linkgenerator
+    container_name: linkgenerator
+    depends_on: 
+      - backend
+    networks: 
+      - supermarket_network
+    restart: 
+     - on-failure
+    
+  product_scraper:
+    build: ./product_scraper
+    container_name: product_scraper
+    depends_on: 
+      - backend
+    networks: 
+      - supermarket_network
+    restart: 
+     - on-failure

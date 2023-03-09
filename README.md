@@ -23,6 +23,7 @@ You should be able to run every component of the project by running the followin
 ```
 docker build -t <component_name> .
 ```
+_Note: Remember to create the .env file in the backend directory before building_
 
 Run the whole project:
 ```
@@ -32,6 +33,13 @@ docker compose up --build
 ## TO DO
 * Add logs
 * Add frontend
-* Add `postgres`
+* ~~Add `postgres`~~
 * Add `Dockerfiles` to every service
+  * ~~`backend`~~
+  * `linkgenerator`
+  * `product_scraper`
 * Add `docker-compose` file
+  * ~~`backend`~~
+  * ~~`postgres`~~
+  * `linkgenerator`
+  * `product_scraper`

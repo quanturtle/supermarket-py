@@ -14,14 +14,17 @@ import sys
 
 from psycopg2 import connect
 from psycopg2.errors import OperationalError
+import config
+
+cfg = config.Config('.env')
 
 try:
     connect(
-        dbname="supermarket",
-        user="django",
-        password="hello_django",
-        host="db",
-        port="5432",
+        dbname=cfg['SQL_DATABASE'],
+        user=cfg['SQL_USER'],
+        password=cfg['SQL_PASSWORD'],
+        host=cfg['SQL_HOST'],
+        port=cfg['SQL_PORT'],
     )
 except OperationalError:
     sys.exit(-1)

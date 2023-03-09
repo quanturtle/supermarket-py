@@ -3,32 +3,54 @@ version: '3.5'
 networks: 
   supermarket_network:
     name: supermarket_network
+    driver: bridge
 
 services:
+  db:
+    image: postgres:13.0-alpine
+    container_name: db
+    volumes:
+      - postgres-data:/var/lib/postgresql/data/
+    environment:
+      - POSTGRES_USER=django
+      - POSTGRES_PASSWORD=hello_django
+      - POSTGRES_DB=supermarket
+    networks:
+      - supermarket_network
+
   backend:
-    image: ./backend
+    image: backend
+    build: ./backend
+    ports:
+      - "8000:8000"
     container_name: backend
-    networks: 
+    networks:
       - supermarket_network
-    restart: 
-     - on-failure
-    
-  linkgenerator:
-    build: ./linkgenerator
-    container_name: linkgenerator
-    depends_on: 
-      - backend
-    networks: 
-      - supermarket_network
-    restart: 
-     - on-failure
-    
-  product_scraper:
-    build: ./product_scraper
-    container_name: product_scraper
-    depends_on: 
-      - backend
-    networks: 
-      - supermarket_network
-    restart: 
-     - on-failure
+    links:
+      - db:db
+    restart: on-failure
+    depends_on:
+      - db
+
+#  linkgenerator:
+#    image: linkgenerator
+#    build: ./linkgenerator
+#    container_name: linkgenerator
+#    depends_on:
+#      - backend
+#    networks:
+#      - supermarket_network
+#    restart: on-failure
+#
+#  product_scraper:
+#    image: product_scraper
+#    build: ./product_scraper
+#    container_name: product_scraper
+#    depends_on:
+#      - backend
+#    networks:
+#      - supermarket_network
+#    restart: on-failure
+
+volumes:
+  postgres-data:

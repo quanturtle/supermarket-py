@@ -23,9 +23,9 @@ You should be able to run every component of the project by running the followin
 ```
 docker build -t <component_name> .
 ```
-_Note: Remember to create the .env file in the backend directory before building_
+_Note: Remember to create the .env from .env.sample file in the backend directory before building_
 
-Run the whole project:
+Run Django+Postgres:
 ```
 docker compose up --build
 ```
@@ -33,13 +33,9 @@ docker compose up --build
 ## TO DO
 * Add logs
 * Add frontend
-* ~~Add `postgres`~~
-* Add `Dockerfiles` to every service
-  * ~~`backend`~~
+* Add `Dockerfile` to every service
   * `linkgenerator`
   * `product_scraper`
-* Add `docker-compose` file
-  * ~~`backend`~~
-  * ~~`postgres`~~
+* Add rest of services to `docker-compose` file
   * `linkgenerator`
   * `product_scraper`

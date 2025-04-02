@@ -1,0 +1,49 @@
+services:
+  db:
+    image: postgres:16.4-alpine3.20
+    restart: always
+    container_name: mage-db
+    env_file:
+      - .env
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    ports:
+      - "${POSTGRES_PORT}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  pipeline:
+    build: 
+      context: .
+      dockerfile: Dockerfile
+    restart: always
+    environment:
+      MAGE_DATA_DIR: ${MAGE_DATA_DIR}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_HOST: db
+      POSTGRES_PORT: 5432
+    ports:
+      - "${PIPELINE_PORT}:6789"
+    depends_on:
+      db:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -s -o /dev/null -w '%{http_code}' http://localhost:${PIPELINE_PORT} | grep -q 200"]
+      interval: 1m30s
+      timeout: 30s
+      retries: 5
+      start_period: 10s
+    volumes:
+      - ./:/app
+      
+volumes:
+  postgres_data:

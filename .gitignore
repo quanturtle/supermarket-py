@@ -14,3 +14,5 @@ mage_data/
 secrets/
 .env
 .venv
+my-project/.operation_history
+my-project/.cache

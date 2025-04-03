@@ -1,2 +1,2 @@
 #!/bin/bash
-mage start my-pipeline/
+mage start my-project/

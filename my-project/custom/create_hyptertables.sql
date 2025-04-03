@@ -1,0 +1,1 @@
+SELECT create_hypertable('products', by_range('updated_at'));

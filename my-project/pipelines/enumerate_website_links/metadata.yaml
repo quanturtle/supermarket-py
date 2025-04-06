@@ -10,37 +10,61 @@ blocks:
     limit: 1000
     use_raw_sql: true
   downstream_blocks:
-  - bfs
+  - transform_html_to_category_urls
   executor_config: null
   executor_type: local_python
   has_callback: false
   language: sql
   name: extract_urls
   retry_config: null
-  status: executed
+  status: updated
   timeout: null
   type: data_loader
   upstream_blocks: []
   uuid: extract_urls
-- all_upstream_blocks_executed: true
+- all_upstream_blocks_executed: false
   color: null
   configuration:
     data_provider: postgres
     data_provider_profile: default
+    dynamic: false
     export_write_policy: append
+    file_path: transformers/transform_html_to_category_urls.py
+    file_source:
+      path: transformers/transform_html_to_category_urls.py
+  downstream_blocks:
+  - load_category_urls
+  executor_config: null
+  executor_type: local_python
+  has_callback: false
+  language: python
+  name: transform_html_to_category_urls
+  retry_config: null
+  status: executed
+  timeout: null
+  type: transformer
+  upstream_blocks:
+  - extract_urls
+  uuid: transform_html_to_category_urls
+- all_upstream_blocks_executed: false
+  color: null
+  configuration:
+    file_path: data_exporters/load_category_urls.py
+    file_source:
+      path: data_exporters/load_category_urls.py
   downstream_blocks: []
   executor_config: null
   executor_type: local_python
   has_callback: false
   language: python
-  name: bfs
+  name: load_category_urls
   retry_config: null
-  status: not_executed
+  status: executed
   timeout: null
-  type: transformer
+  type: data_exporter
   upstream_blocks:
-  - extract_urls
-  uuid: bfs
+  - transform_html_to_category_urls
+  uuid: load_category_urls
 cache_block_output_in_memory: false
 callbacks: []
 concurrency_config: {}

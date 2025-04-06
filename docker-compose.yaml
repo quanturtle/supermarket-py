@@ -2,7 +2,7 @@ services:
   db:
     image: timescale/timescaledb-ha:pg17
     restart: always
-    container_name: mage-db
+    container_name: supermarket-db
     env_file:
       - .env
     environment:
@@ -24,7 +24,7 @@ services:
       context: .
       dockerfile: Dockerfile
     restart: always
-    container_name: mage-pipeline
+    container_name: supermarket-pipeline
     environment:
       MAGE_DATA_DIR: ${MAGE_DATA_DIR}
       POSTGRES_USER: ${POSTGRES_USER}

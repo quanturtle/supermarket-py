@@ -1,7 +1,9 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { CheckCircle2 } from "lucide-react"
+import { ExternalLink, ShoppingBag } from "lucide-react"
 import type { ProductData } from "@/lib/data/product-data"
+import Link from "next/link"
+import { Button } from "@/components/ui/button"
 
 type CartItem = {
   productId: string
@@ -48,7 +50,12 @@ export function PriceComparisonGrid({ comparisons, products, cart }: PriceCompar
         {/* Optimal Combination */}
         <Card className="border-purple-200">
           <CardHeader className="bg-purple-50 border-b border-purple-100 pb-3">
-            <CardTitle className="text-purple-800 text-lg">Optimal Combination</CardTitle>
+            <CardTitle className="text-purple-800 text-lg flex items-center justify-between">
+              <span>Optimal Combination</span>
+              <Link href="/cart/shopping-list">
+                <ShoppingBag className="h-5 w-5 text-purple-700 cursor-pointer hover:text-purple-900" />
+              </Link>
+            </CardTitle>
             <CardDescription className="text-purple-700">Total: ${optimal.totalPrice.toFixed(2)}</CardDescription>
           </CardHeader>
           <CardContent className="pt-3 h-[300px] overflow-auto">
@@ -56,8 +63,8 @@ export function PriceComparisonGrid({ comparisons, products, cart }: PriceCompar
               <TableHeader>
                 <TableRow>
                   <TableHead className="text-xs">Product</TableHead>
-                  <TableHead className="text-xs">Supermarket</TableHead>
                   <TableHead className="text-xs">Price</TableHead>
+                  <TableHead className="text-xs">Total</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -72,18 +79,21 @@ export function PriceComparisonGrid({ comparisons, products, cart }: PriceCompar
                           <span className="text-xs text-gray-500">×{cartItem?.quantity}</span>
                         </div>
                       </TableCell>
-                      <TableCell className="py-1">
-                        <span className="flex items-center text-xs">
-                          {item.supermarket}
-                          <CheckCircle2 className="h-3 w-3 text-green-500 ml-1" />
-                        </span>
-                      </TableCell>
                       <TableCell className="py-1 text-xs">${item.price.toFixed(2)}</TableCell>
+                      <TableCell className="py-1 text-xs">${item.total.toFixed(2)}</TableCell>
                     </TableRow>
                   )
                 })}
               </TableBody>
             </Table>
+            <div className="mt-3 text-center">
+              <Link href="/cart/shopping-list">
+                <Button variant="outline" size="sm" className="text-xs">
+                  <ShoppingBag className="h-3 w-3 mr-1" />
+                  View Shopping List
+                </Button>
+              </Link>
+            </div>
           </CardContent>
         </Card>
 
@@ -121,6 +131,14 @@ export function PriceComparisonGrid({ comparisons, products, cart }: PriceCompar
                 })}
               </TableBody>
             </Table>
+            <div className="mt-3 text-center">
+              <Link href={`/cart/shopping-list?supermarket=${encodeURIComponent(best.name)}`}>
+                <Button variant="outline" size="sm" className="text-xs">
+                  <ExternalLink className="h-3 w-3 mr-1" />
+                  Shop at {best.name}
+                </Button>
+              </Link>
+            </div>
           </CardContent>
         </Card>
 
@@ -158,6 +176,14 @@ export function PriceComparisonGrid({ comparisons, products, cart }: PriceCompar
                 })}
               </TableBody>
             </Table>
+            <div className="mt-3 text-center">
+              <Link href={`/cart/shopping-list?supermarket=${encodeURIComponent(average.name)}`}>
+                <Button variant="outline" size="sm" className="text-xs">
+                  <ExternalLink className="h-3 w-3 mr-1" />
+                  Shop at {average.name}
+                </Button>
+              </Link>
+            </div>
           </CardContent>
         </Card>
 
@@ -195,6 +221,14 @@ export function PriceComparisonGrid({ comparisons, products, cart }: PriceCompar
                 })}
               </TableBody>
             </Table>
+            <div className="mt-3 text-center">
+              <Link href={`/cart/shopping-list?supermarket=${encodeURIComponent(worst.name)}`}>
+                <Button variant="outline" size="sm" className="text-xs">
+                  <ExternalLink className="h-3 w-3 mr-1" />
+                  Shop at {worst.name}
+                </Button>
+              </Link>
+            </div>
           </CardContent>
         </Card>
       </div>
@@ -202,12 +236,10 @@ export function PriceComparisonGrid({ comparisons, products, cart }: PriceCompar
       <div className="p-3 bg-gray-50 rounded-md text-sm text-gray-700 border">
         <p>
           <strong>Savings Summary:</strong> Shopping at the best supermarket ({best.name}) would save you $
-          {(worst.totalPrice - best.totalPrice).toFixed(2)}
-          compared to the worst option. Using the optimal combination would save you an additional $
+          {(worst.totalPrice - best.totalPrice).toFixed(2)} compared to the worst option. Using the optimal combination would save you an additional $
           {(best.totalPrice - optimal.totalPrice).toFixed(2)}.
         </p>
       </div>
     </div>
   )
 }
-

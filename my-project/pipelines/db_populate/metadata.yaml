@@ -5,7 +5,7 @@ blocks:
     data_provider: postgres
     data_provider_profile: default
     dbt: {}
-    disable_query_preprocessing: true
+    disable_query_preprocessing: false
     export_write_policy: append
     file_path: custom/insert_test_supermarkets_data.sql
     file_source:
@@ -13,29 +13,29 @@ blocks:
     limit: 1000
     use_raw_sql: true
   downstream_blocks:
-  - insert_test_urls_data
+  - insert_test_products_data
   executor_config: null
   executor_type: local_python
   has_callback: false
   language: sql
   name: insert_test_supermarkets_data
   retry_config: null
-  status: updated
+  status: executed
   timeout: null
   type: custom
   upstream_blocks: []
   uuid: insert_test_supermarkets_data
-- all_upstream_blocks_executed: false
+- all_upstream_blocks_executed: true
   color: pink
   configuration:
     data_provider: postgres
     data_provider_profile: default
     dbt: {}
-    disable_query_preprocessing: true
+    disable_query_preprocessing: false
     export_write_policy: append
-    file_path: custom/insert_test_urls_data.sql
+    file_path: custom/insert_test_products_data.sql
     file_source:
-      path: custom/insert_test_urls_data.sql
+      path: custom/insert_test_products_data.sql
     limit: 1000
     use_raw_sql: true
   downstream_blocks: []
@@ -43,14 +43,14 @@ blocks:
   executor_type: local_python
   has_callback: false
   language: sql
-  name: insert_test_urls_data
+  name: insert_test_products_data
   retry_config: null
   status: updated
   timeout: null
   type: custom
   upstream_blocks:
   - insert_test_supermarkets_data
-  uuid: insert_test_urls_data
+  uuid: insert_test_products_data
 cache_block_output_in_memory: false
 callbacks: []
 concurrency_config: {}

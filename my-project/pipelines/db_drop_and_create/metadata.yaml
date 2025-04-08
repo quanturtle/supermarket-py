@@ -17,12 +17,12 @@ blocks:
   language: sql
   name: drop_tables
   retry_config: null
-  status: executed
+  status: updated
   timeout: null
   type: custom
   upstream_blocks: []
   uuid: drop_tables
-- all_upstream_blocks_executed: true
+- all_upstream_blocks_executed: false
   color: teal
   configuration:
     data_provider: postgres

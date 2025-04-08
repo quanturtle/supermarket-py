@@ -25,6 +25,6 @@ CREATE TABLE IF NOT EXISTS products (
     supermarket_id integer REFERENCES supermarkets (id),
     "name" VARCHAR,
     sku VARCHAR,
-	price VARCHAR,
+	price DECIMAL,
 	created_at TIMESTAMP
 );

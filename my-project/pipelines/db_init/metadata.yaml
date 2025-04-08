@@ -10,14 +10,14 @@ blocks:
     limit: 1000
     use_raw_sql: true
   downstream_blocks:
-  - create_hyptertables
+  - create_hypertables
   executor_config: null
   executor_type: local_python
   has_callback: false
   language: sql
   name: create_tables
   retry_config: null
-  status: updated
+  status: executed
   timeout: null
   type: custom
   upstream_blocks: []
@@ -28,11 +28,10 @@ blocks:
     data_provider: postgres
     data_provider_profile: default
     dbt: {}
-    disable_query_preprocessing: true
+    disable_query_preprocessing: false
     export_write_policy: append
-    file_path: custom/create_hyptertables.sql
     file_source:
-      path: custom/create_hyptertables.sql
+      path: custom/create_hypertables.sql
     limit: 1000
     use_raw_sql: true
   downstream_blocks: []
@@ -40,14 +39,14 @@ blocks:
   executor_type: local_python
   has_callback: false
   language: sql
-  name: create_hyptertableS
+  name: create_hypertables
   retry_config: null
-  status: updated
+  status: not_executed
   timeout: null
   type: custom
   upstream_blocks:
   - create_tables
-  uuid: create_hyptertables
+  uuid: create_hypertables
 cache_block_output_in_memory: false
 callbacks: []
 concurrency_config: {}

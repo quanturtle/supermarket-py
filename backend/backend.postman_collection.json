@@ -1,7 +1,7 @@
 {
 	"info": {
 		"_postman_id": "10f230ba-3267-4e98-a4fe-eca2802fd926",
-		"name": "supermarket-backend",
+		"name": "backend",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
 		"_exporter_id": "43873976"
 	},
@@ -59,7 +59,7 @@
 				"method": "GET",
 				"header": [],
 				"url": {
-					"raw": "localhost:8000/products/search/",
+					"raw": "localhost:8000/products/search/?query=apple",
 					"host": [
 						"localhost"
 					],
@@ -68,6 +68,12 @@
 						"products",
 						"search",
 						""
+					],
+					"query": [
+						{
+							"key": "query",
+							"value": "apple"
+						}
 					]
 				}
 			},
@@ -81,6 +87,15 @@
 				},
 				"method": "POST",
 				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"shopping_list\": [\n        {\n            \"sku\": \"apple\", \n            \"quantity\": 3\n        }\n    ],\n    \"date_range\": [\"2025-01-01\", \"2025-02-01\"]\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
 				"url": {
 					"raw": "localhost:8000/price-comparison",
 					"host": [
@@ -102,6 +117,15 @@
 				},
 				"method": "POST",
 				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "[\n    {\n        \"sku\": \"apple\", \n        \"quantity\": 3\n    }\n]",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
 				"url": {
 					"raw": "localhost:8000/inflation",
 					"host": [

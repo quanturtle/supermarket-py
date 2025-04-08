@@ -32,7 +32,7 @@ async def search_products(query: str, session: Session = Depends(get_session)):
     products = session.exec(
         select(Product).where(
             (Product.name.ilike(f"%{query}%"))
-        ).order_by(Product.updated_at.desc())
+        ).order_by(Product.created_at.desc())
     ).all()
     
     return products

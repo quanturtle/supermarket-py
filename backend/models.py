@@ -24,8 +24,8 @@ class Supermarket(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
     name: str
     home_url: Optional[str] = None
-    categories_container_url: Optional[str] = None
-    categories_container_class: Optional[str] = None
+    category_urls_container_url: Optional[str] = None
+    category_urls_container_class: Optional[str] = None
     api_url: Optional[str] = None
     
     category_urls: List["CategoryURL"] = Relationship(back_populates="supermarket")
@@ -37,7 +37,7 @@ class CategoryURL(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
     supermarket_id: int = Field(foreign_key="supermarkets.id")
     url: str
-    created_at: datetime = Field(default_factory=datetime.utcnow)
+    created_at: datetime = Field(default_factory=datetime.now())
     
     supermarket: Supermarket = Relationship(back_populates="category_urls")
 
@@ -47,7 +47,7 @@ class ProductURL(SQLModel, table=True):
     
     id: Optional[int] = Field(default=None, primary_key=True)
     url: str
-    created_at: datetime = Field(default_factory=datetime.utcnow)
+    created_at: datetime = Field(default_factory=datetime.now())
 
 
 class Product(SQLModel, table=True):
@@ -57,8 +57,7 @@ class Product(SQLModel, table=True):
     name: str
     sku: str
     price: str
-    created_at: datetime = Field(default_factory=datetime.utcnow)
-    updated_at: Optional[datetime] = None
+    created_at: datetime = Field(default_factory=datetime.now())
 
 
 def get_session():

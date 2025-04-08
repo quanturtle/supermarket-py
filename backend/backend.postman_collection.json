@@ -1,0 +1,119 @@
+{
+	"info": {
+		"_postman_id": "10f230ba-3267-4e98-a4fe-eca2802fd926",
+		"name": "supermarket-backend",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "43873976"
+	},
+	"item": [
+		{
+			"name": "localhost:8000/products/",
+			"request": {
+				"auth": {
+					"type": "noauth"
+				},
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "localhost:8000/products/",
+					"host": [
+						"localhost"
+					],
+					"port": "8000",
+					"path": [
+						"products",
+						""
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "localhost:8000/products/1",
+			"request": {
+				"auth": {
+					"type": "noauth"
+				},
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "localhost:8000/products/1",
+					"host": [
+						"localhost"
+					],
+					"port": "8000",
+					"path": [
+						"products",
+						"1"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "localhost:8000/products/search/",
+			"request": {
+				"auth": {
+					"type": "noauth"
+				},
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "localhost:8000/products/search/",
+					"host": [
+						"localhost"
+					],
+					"port": "8000",
+					"path": [
+						"products",
+						"search",
+						""
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "localhost:8000/price-comparison",
+			"request": {
+				"auth": {
+					"type": "noauth"
+				},
+				"method": "POST",
+				"header": [],
+				"url": {
+					"raw": "localhost:8000/price-comparison",
+					"host": [
+						"localhost"
+					],
+					"port": "8000",
+					"path": [
+						"price-comparison"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "localhost:8000/inflation",
+			"request": {
+				"auth": {
+					"type": "noauth"
+				},
+				"method": "POST",
+				"header": [],
+				"url": {
+					"raw": "localhost:8000/inflation",
+					"host": [
+						"localhost"
+					],
+					"port": "8000",
+					"path": [
+						"inflation"
+					]
+				}
+			},
+			"response": []
+		}
+	]
+}

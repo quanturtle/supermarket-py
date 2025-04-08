@@ -17,12 +17,12 @@ blocks:
   language: sql
   name: create_tables
   retry_config: null
-  status: executed
+  status: updated
   timeout: null
   type: custom
   upstream_blocks: []
   uuid: create_tables
-- all_upstream_blocks_executed: true
+- all_upstream_blocks_executed: false
   color: pink
   configuration:
     data_provider: postgres

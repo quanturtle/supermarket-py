@@ -22,9 +22,9 @@ CREATE TABLE IF NOT EXISTS product_urls (
 
 CREATE TABLE IF NOT EXISTS products (
     id SERIAL PRIMARY KEY,
+    supermarket_id integer REFERENCES supermarkets (id),
     "name" VARCHAR,
     sku VARCHAR,
 	price VARCHAR,
-	created_at TIMESTAMP,
-	updated_at TIMESTAMP
+	created_at TIMESTAMP
 );

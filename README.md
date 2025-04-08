@@ -1,5 +1,11 @@
-# Tender Pipeline
-Pipeline with mage.ai
+# Supermarket.py
+A project that scrapes data from paraguayan supermarkets.
+
+## Architecture
+* Frontend (`next.js`)
+* Backend (`fastapi`)
+* DB (`postgres`)
+* Pipeline (`mage.ai`)
 
 ## Install
 Make sure `run_app.sh` is executable:
@@ -24,6 +30,3 @@ Build and run with `docker`:
 ```sh
 docker compose build && docker compose up
 ```
-
-> [!NOTE]  
-> unify `postgres` credentials between `my-pipeline/io_config.yaml`, `docker-compose.yaml` and `.env`

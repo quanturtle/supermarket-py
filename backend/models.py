@@ -1,4 +1,5 @@
 from typing import Optional, List
+from decimal import Decimal
 from datetime import datetime
 from sqlmodel import Field, SQLModel, Relationship, create_engine, Session
 import os
@@ -29,6 +30,7 @@ class Supermarket(SQLModel, table=True):
     api_url: Optional[str] = None
     
     category_urls: List["CategoryURL"] = Relationship(back_populates="supermarket")
+    products: List["Product"] = Relationship(back_populates="supermarket")
 
 
 class CategoryURL(SQLModel, table=True):
@@ -54,10 +56,13 @@ class Product(SQLModel, table=True):
     __tablename__ = "products"
     
     id: Optional[int] = Field(default=None, primary_key=True)
+    supermarket_id: int = Field(foreign_key="supermarkets.id")
     name: str
     sku: str
-    price: str
+    price: Decimal
     created_at: datetime = Field(default_factory=datetime.now())
+
+    supermarket: Supermarket = Relationship(back_populates="products")
 
 
 def get_session():

@@ -89,7 +89,7 @@
 				"header": [],
 				"body": {
 					"mode": "raw",
-					"raw": "{\n    \"shopping_list\": [\n        {\n            \"sku\": \"apple\", \n            \"quantity\": 3\n        }\n    ],\n    \"date_range\": [\"2025-01-01\", \"2025-02-01\"]\n}",
+					"raw": "[\n    {\n        \"sku\": \"BREAD-WHT-500G\", \n        \"quantity\": 1\n    }\n]",
 					"options": {
 						"raw": {
 							"language": "json"
@@ -119,7 +119,7 @@
 				"header": [],
 				"body": {
 					"mode": "raw",
-					"raw": "[\n    {\n        \"sku\": \"apple\", \n        \"quantity\": 3\n    }\n]",
+					"raw": "{\n    \"shopping_list\": [\n        {\n            \"sku\": \"BREAD-WHT-500G\", \n            \"quantity\": 1\n        }\n    ],\n    \"date_range\": [\"2025-01-01\", \"2025-02-01\"]\n}",
 					"options": {
 						"raw": {
 							"language": "json"

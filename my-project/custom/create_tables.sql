@@ -2,8 +2,8 @@ CREATE TABLE IF NOT EXISTS supermarkets (
     id SERIAL PRIMARY KEY,
     "name" VARCHAR,
     home_url VARCHAR,
-    categories_container_url VARCHAR,
-    categories_container_class VARCHAR,
+    category_urls_container_url VARCHAR,
+    category_urls_container_class VARCHAR,
     api_url VARCHAR
 );
 

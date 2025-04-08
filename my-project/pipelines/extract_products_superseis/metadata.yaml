@@ -10,73 +10,87 @@ blocks:
     limit: 1000
     use_raw_sql: true
   downstream_blocks:
-  - transform_html_to_category_urls
+  - fan_product_urls
   executor_config: null
   executor_type: local_python
   has_callback: false
   language: sql
-  name: extract_urls
+  name: extract_product_urls_superseis
   retry_config: null
   status: updated
   timeout: null
   type: data_loader
   upstream_blocks: []
-  uuid: extract_urls
+  uuid: extract_product_urls_superseis
 - all_upstream_blocks_executed: false
   color: null
   configuration:
     data_provider: postgres
     data_provider_profile: default
-    dynamic: false
+    dynamic: true
     export_write_policy: append
-    file_path: transformers/transform_html_to_category_urls.py
+    file_path: transformers/fan_product_urls.py
     file_source:
-      path: transformers/transform_html_to_category_urls.py
+      path: transformers/fan_product_urls.py
   downstream_blocks:
-  - load_category_urls
+  - reduce_product_urls_to_product
   executor_config: null
   executor_type: local_python
   has_callback: false
   language: python
-  name: transform_html_to_category_urls
+  name: fan_product_urls
   retry_config: null
   status: updated
   timeout: null
   type: transformer
   upstream_blocks:
-  - extract_urls
-  uuid: transform_html_to_category_urls
+  - extract_product_urls_superseis
+  uuid: fan_product_urls
 - all_upstream_blocks_executed: false
   color: null
-  configuration:
-    file_path: data_exporters/load_category_urls.py
-    file_source:
-      path: data_exporters/load_category_urls.py
+  configuration: {}
+  downstream_blocks:
+  - load_products
+  executor_config: null
+  executor_type: local_python
+  has_callback: false
+  language: python
+  name: reduce_product_urls_to_product
+  retry_config: null
+  status: updated
+  timeout: null
+  type: transformer
+  upstream_blocks:
+  - fan_product_urls
+  uuid: reduce_product_urls_to_product
+- all_upstream_blocks_executed: false
+  color: null
+  configuration: {}
   downstream_blocks: []
   executor_config: null
   executor_type: local_python
   has_callback: false
   language: python
-  name: load_category_urls
+  name: load_products
   retry_config: null
-  status: executed
+  status: updated
   timeout: null
   type: data_exporter
   upstream_blocks:
-  - transform_html_to_category_urls
-  uuid: load_category_urls
+  - reduce_product_urls_to_product
+  uuid: load_products
 cache_block_output_in_memory: false
 callbacks: []
 concurrency_config: {}
 conditionals: []
-created_at: '2025-04-03 18:02:06.040266+00:00'
+created_at: '2025-04-08 20:37:12.892973+00:00'
 data_integration: null
-description: extract all links inside a website
+description: Extract product information from Superseis
 executor_config: {}
 executor_count: 1
 executor_type: null
 extensions: {}
-name: enumerate_website_links
+name: extract_products_superseis
 notification_config: {}
 remote_variables_dir: null
 retry_config: {}
@@ -86,6 +100,6 @@ settings:
 spark_config: {}
 tags: []
 type: python
-uuid: enumerate_website_links
+uuid: extract_products_superseis
 variables_dir: /app/my-project
 widgets: []

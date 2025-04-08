@@ -70,7 +70,7 @@ blocks:
     file_source:
       path: transformers/fan_category_urls.py
   downstream_blocks:
-  - transform_category_urls_to_product_urls_superseis
+  - reduce_category_urls_to_product_urls_superseis
   executor_config: null
   executor_type: local_python
   has_callback: false
@@ -86,9 +86,9 @@ blocks:
 - all_upstream_blocks_executed: true
   color: null
   configuration:
-    file_path: transformers/transform_category_urls_to_product_urls_superseis.py
+    file_path: transformers/reduce_category_urls_to_product_urls_superseis.py
     file_source:
-      path: transformers/transform_category_urls_to_product_urls_superseis.py
+      path: transformers/reduce_category_urls_to_product_urls_superseis.py
     reduce_output: true
   downstream_blocks:
   - load_product_urls
@@ -96,14 +96,14 @@ blocks:
   executor_type: local_python
   has_callback: false
   language: python
-  name: transform_category_urls_to_product_urls_superseis
+  name: reduce_category_urls_to_product_urls_superseis
   retry_config: null
   status: executed
   timeout: null
   type: transformer
   upstream_blocks:
   - fan_category_urls
-  uuid: transform_category_urls_to_product_urls_superseis
+  uuid: reduce_category_urls_to_product_urls_superseis
 - all_upstream_blocks_executed: true
   color: null
   configuration:
@@ -121,7 +121,7 @@ blocks:
   timeout: null
   type: data_exporter
   upstream_blocks:
-  - transform_category_urls_to_product_urls_superseis
+  - reduce_category_urls_to_product_urls_superseis
   uuid: load_product_urls
 cache_block_output_in_memory: false
 callbacks: []
@@ -134,7 +134,7 @@ executor_config: {}
 executor_count: 1
 executor_type: null
 extensions: {}
-name: pipeline_superseis
+name: enumerate_links_superseis
 notification_config: {}
 remote_variables_dir: null
 retry_config: {}
@@ -144,6 +144,6 @@ settings:
 spark_config: {}
 tags: []
 type: python
-uuid: pipeline_superseis
+uuid: enumerate_links_superseis
 variables_dir: /app/my-project
 widgets: []

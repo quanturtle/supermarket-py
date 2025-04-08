@@ -1,0 +1,1 @@
+SELECT * FROM product_urls WHERE supermarket_id = 1;

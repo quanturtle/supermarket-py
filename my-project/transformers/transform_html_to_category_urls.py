@@ -15,10 +15,8 @@ def transform(data, *args, **kwargs):
     for idx, row in data.iterrows():
         response = r.get(row['categories_container_url'])
         soup = BeautifulSoup(response.text, 'html.parser')
-        print(f'soup: {soup}')
         
-        class_list = row['categories_container'].split()
-        print(f'class_list: {class_list}')
+        class_list = row['categories_container_class'].split()
         
         matching_divs = []
         

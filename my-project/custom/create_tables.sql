@@ -3,14 +3,21 @@ CREATE TABLE IF NOT EXISTS supermarkets (
     "name" VARCHAR,
     home_url VARCHAR,
     categories_container_url VARCHAR,
-    categories_container VARCHAR
+    categories_container_class VARCHAR,
+    api_url VARCHAR
 );
 
-CREATE TABLE IF NOT EXISTS urls (
+CREATE TABLE IF NOT EXISTS category_urls (
+    id SERIAL PRIMARY KEY,
+    supermarket_id integer REFERENCES supermarkets (id),
+    url VARCHAR,
+    created_at TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS product_urls (
     id SERIAL PRIMARY KEY,
     url VARCHAR,
-    created_at TIMESTAMP,
-    last_visited TIMESTAMP
+    created_at TIMESTAMP
 );
 
 CREATE TABLE IF NOT EXISTS products (
@@ -20,11 +27,4 @@ CREATE TABLE IF NOT EXISTS products (
 	price VARCHAR,
 	created_at TIMESTAMP,
 	updated_at TIMESTAMP
-);
-
-CREATE TABLE IF NOT EXISTS category_urls (
-    id SERIAL PRIMARY KEY,
-    supermarket_id integer REFERENCES supermarkets (id),
-    description VARCHAR,
-    url VARCHAR
 );

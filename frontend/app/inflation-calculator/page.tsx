@@ -25,7 +25,7 @@ export default function InflationCalculatorPage() {
     useEffect(() => {
         async function loadProducts() {
             try {
-                const allProducts = await API.getProducts()
+                const allProducts = await API.getAllProducts()
                 setProducts(allProducts)
             } catch (error) {
                 console.error("Error loading products:", error)
@@ -53,13 +53,11 @@ export default function InflationCalculatorPage() {
         return true
     }
 
-    // Update the calculateInflation function to use the API
     const calculateInflation = async () => {
         if (!validateDateSelection()) return
 
         setCalculating(true)
         try {
-            // Call the API to calculate inflation
             const results = await API.calculateInflation(selectedProducts, startDate, endDate)
 
             setCalculationResults(results)

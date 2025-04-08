@@ -27,7 +27,7 @@ export default function ShoppingListPage() {
                 setLoading(true)
 
                 // Load all products
-                const allProducts = await API.getProducts()
+                const allProducts = await API.getAllProducts()
                 setProducts(allProducts)
 
                 // Get selected cart items with quantities
@@ -44,7 +44,6 @@ export default function ShoppingListPage() {
                     quantities[item.productId] = item.quantity
                 })
 
-                // Call the API to get price comparison
                 const comparisonData = await API.getPriceComparison(
                     selectedItems.map((item) => item.productId),
                     quantities,

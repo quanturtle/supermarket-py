@@ -15,7 +15,7 @@ export default function ProductsPage() {
         async function loadProducts() {
             try {
                 setLoading(true)
-                const allProducts = await API.getProducts()
+                const allProducts = await API.getAllProducts()
                 setProducts(allProducts)
             } catch (error) {
                 console.error("Error loading products:", error)

@@ -30,7 +30,7 @@ export function SearchProductDialog() {
     useEffect(() => {
         async function loadProducts() {
             try {
-                const allProducts = await API.getProducts()
+                const allProducts = await API.getAllProducts()
                 setProducts(allProducts)
             } catch (error) {
                 console.error("Error loading products:", error)
@@ -79,7 +79,6 @@ export function SearchProductDialog() {
 
     const handleAddToCart = async (productId: string, quantity: number) => {
         try {
-            // Simulate API call to add to cart
             await API.addToCart(productId, quantity)
             addToCart(productId, quantity)
             // Reset quantity after adding

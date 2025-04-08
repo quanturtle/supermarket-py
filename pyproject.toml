@@ -3,7 +3,7 @@ name = "supermarket-py"
 version = "0.1.0"
 description = "Add your description here"
 readme = "README.md"
-requires-python = ">=3.10.16"
+requires-python = ">=3.10.16, <3.10.17"
 dependencies = [
     "aiofiles==22.1.0",
     "aiohappyeyeballs==2.6.1",

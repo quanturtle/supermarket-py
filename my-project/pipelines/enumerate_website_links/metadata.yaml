@@ -40,7 +40,7 @@ blocks:
   language: python
   name: transform_html_to_category_urls
   retry_config: null
-  status: executed
+  status: updated
   timeout: null
   type: transformer
   upstream_blocks:

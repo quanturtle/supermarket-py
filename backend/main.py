@@ -37,8 +37,7 @@ async def get_products(session: Session = Depends(get_session)):
 
 @app.get('/product/{product_sku}')
 async def get_product_by_sku(product_sku: str, session: Session = Depends(get_session)):
-    # seven_days_ago = datetime.today().date() - timedelta(days=7)
-    seven_days_ago = datetime.strptime('2025-02-01', '%Y-%m-%d').date() - timedelta(days=31)
+    seven_days_ago = datetime.today().date() - timedelta(days=7)
 
     price_history_stmt = (
         select(

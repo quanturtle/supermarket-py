@@ -1,35 +1,35 @@
-import uvicorn
-import pandas as pd
-from fastapi import FastAPI, Depends, HTTPException
-from sqlmodel import Session, select
-from sqlalchemy import func, desc, over
 from typing import List, Dict, Any, Optional, Tuple
 from datetime import datetime, timedelta
 
-from models import Supermarket, CategoryURL, ProductURL, Product, get_session
+import uvicorn
+import pandas as pd
+from sqlmodel import Session, select
+from sqlalchemy import func, desc, over
+from fastapi import FastAPI, Depends, HTTPException
+from models import Product, get_session
 
 
 app = FastAPI(
-    title="supermarket-py-backend",
-    description="API for comparing prices of products across different supermarkets",
-    version="1.0.0",
+    title='supermarket-py-backend',
+    description='API for comparing prices of products across different supermarkets',
+    version='1.0.0',
 )
 
 
-@app.get("/products")
+@app.get('/products')
 async def get_all_products(session: Session = Depends(get_session)):
     return session.exec(select(Product)).all()
 
 
-@app.get("/products/{product_id}")
+@app.get('/products/{product_id}')
 async def get_product_by_id(product_id: int, session: Session = Depends(get_session)):
     product = session.get(Product, product_id)
     if not product:
-        raise HTTPException(status_code=404, detail="Product not found")
+        raise HTTPException(status_code=404, detail='Product not found')
     return product
 
 
-@app.get("/products/search/")
+@app.get('/products/search/')
 async def search_products(query: str, session: Session = Depends(get_session)):
     products = session.exec(
         select(Product).where(
@@ -40,7 +40,7 @@ async def search_products(query: str, session: Session = Depends(get_session)):
     return products
 
 
-@app.post("/price-comparison")
+@app.post('/price-comparison')
 async def price_comparison(shopping_list: List[dict], session: Session = Depends(get_session)):
     all_results = []
     
@@ -90,26 +90,26 @@ async def price_comparison(shopping_list: List[dict], session: Session = Depends
 
     # best
     best_supermarket_id = price_totals_df.idxmin()
-    best_supermarket_df = price_df[price_df["supermarket_id"] == best_supermarket_id]
+    best_supermarket_df = price_df[price_df['supermarket_id'] == best_supermarket_id]
 
     # median
     median_idx = len(price_totals_df) // 2
     median_supermarket_id = price_totals_df.index[median_idx]
-    median_supermarket_df = price_df[price_df["supermarket_id"] == median_supermarket_id]
+    median_supermarket_df = price_df[price_df['supermarket_id'] == median_supermarket_id]
 
     # worst
     worst_supermarket_id = price_totals_df.idxmax()
-    worst_supermarket_df = price_df[price_df["supermarket_id"] == worst_supermarket_id]
+    worst_supermarket_df = price_df[price_df['supermarket_id'] == worst_supermarket_id]
 
     return {
-        "optimal": optimal_df.to_dict(orient='records'),
-        "best": best_supermarket_df.to_dict(orient='records'),
-        "median": median_supermarket_df.to_dict(orient='records'),
-        "worst": worst_supermarket_df.to_dict(orient='records')
+        'optimal': optimal_df.to_dict(orient='records'),
+        'best': best_supermarket_df.to_dict(orient='records'),
+        'median': median_supermarket_df.to_dict(orient='records'),
+        'worst': worst_supermarket_df.to_dict(orient='records')
     }
 
 
-@app.post("/inflation")
+@app.post('/inflation')
 async def calculate_inflation(shopping_list: dict, date_range: List[str], session: Session = Depends(get_session)):
     shopping_list = [{'sku': 'BREAD-WHT-500G', 'quantity': 1}]
     start_date, end_date = ['2025-01-01', '2025-02-01']
@@ -117,8 +117,8 @@ async def calculate_inflation(shopping_list: dict, date_range: List[str], sessio
     # calculate lowest inflation
     # calculate gap inflation
     
-    return {"status": "/inflation"}
+    return {'status': '/inflation'}
 
 
-if __name__ == "__main__":
-    uvicorn.run("main:app", host="localhost", port=8000, reload=True)
+if __name__ == '__main__':
+    uvicorn.run('main:app', host='localhost', port=8000, reload=True)

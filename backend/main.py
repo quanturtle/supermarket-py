@@ -33,7 +33,7 @@ async def get_product_by_id(product_id: int, session: Session = Depends(get_sess
 async def search_products(query: str, session: Session = Depends(get_session)):
     products = session.exec(
         select(Product).where(
-            (Product.name.ilike(f"%{query}%"))
+            (Product.name.ilike(f'%{query}%'))
         ).order_by(Product.created_at.desc())
     ).all()
     
@@ -89,17 +89,14 @@ async def price_comparison(shopping_list: List[dict], session: Session = Depends
     price_totals_df = price_df.groupby('supermarket_id')['price'].sum().sort_values(ascending=True)
 
     # best
-    best_supermarket_id = price_totals_df.idxmin()
-    best_supermarket_df = price_df[price_df['supermarket_id'] == best_supermarket_id]
+    best_supermarket_df = price_df[price_df['supermarket_id'] == price_totals_df.idxmin()]
 
     # median
-    median_idx = len(price_totals_df) // 2
-    median_supermarket_id = price_totals_df.index[median_idx]
+    median_supermarket_id = price_totals_df.index[len(price_totals_df) // 2]
     median_supermarket_df = price_df[price_df['supermarket_id'] == median_supermarket_id]
 
     # worst
-    worst_supermarket_id = price_totals_df.idxmax()
-    worst_supermarket_df = price_df[price_df['supermarket_id'] == worst_supermarket_id]
+    worst_supermarket_df = price_df[price_df['supermarket_id'] == price_totals_df.idxmax()]
 
     return {
         'optimal': optimal_df.to_dict(orient='records'),
@@ -110,14 +107,46 @@ async def price_comparison(shopping_list: List[dict], session: Session = Depends
 
 
 @app.post('/inflation')
-async def calculate_inflation(shopping_list: dict, date_range: List[str], session: Session = Depends(get_session)):
-    shopping_list = [{'sku': 'BREAD-WHT-500G', 'quantity': 1}]
-    start_date, end_date = ['2025-01-01', '2025-02-01']
-    # calculate average inflation
-    # calculate lowest inflation
-    # calculate gap inflation
+async def calculate_inflation(shopping_list: List[Dict], date_range: List[str], session: Session = Depends(get_session)):
+    start_date, end_date = date_range
+    start_date, end_date = datetime.strptime(start_date, '%Y-%m-%d').date(), datetime.strptime(end_date, '%Y-%m-%d').date()
     
-    return {'status': '/inflation'}
+    all_prods = []
+    for prod in shopping_list:
+        products = session.exec(
+            select(Product).where(
+                (Product.sku == prod['sku']) and ((Product.created_at == start_date) or (Product.created_at == end_date))
+            ).order_by(Product.created_at.desc())
+        ).all()
+
+        all_prods += products
+    
+    inflation_df = pd.DataFrame.from_records([i.dict() for i in all_prods])
+    inflation_df['created_at'] = pd.to_datetime(inflation_df['created_at']).dt.date
+    
+    inflation_by_date_df = inflation_df.groupby(by='created_at')['price'].agg(['min', 'max', 'mean']).reset_index()
+    inflation_by_date_df['gap'] = inflation_by_date_df['max'] - inflation_by_date_df['min']
+
+    # calculate average inflation
+    start_mean = inflation_by_date_df.loc[inflation_by_date_df['created_at'] == start_date, 'mean'].iloc[0]
+    end_mean = inflation_by_date_df.loc[inflation_by_date_df['created_at'] == end_date, 'mean'].iloc[0]
+    mean_inflation = (end_mean - start_mean) / start_mean * 100
+    
+    # calculate lowest inflation
+    start_min = inflation_by_date_df.loc[inflation_by_date_df['created_at'] == start_date, 'min'].iloc[0]
+    end_min = inflation_by_date_df.loc[inflation_by_date_df['created_at'] == end_date, 'min'].iloc[0]
+    min_inflation = (end_min - start_min) / start_min * 100
+
+    # calculate gap inflation
+    start_gap = inflation_by_date_df.loc[inflation_by_date_df['created_at'] == start_date, 'gap'].iloc[0]
+    end_gap = inflation_by_date_df.loc[inflation_by_date_df['created_at'] == end_date, 'gap'].iloc[0]
+    gap_inflation = (end_gap - start_gap) / start_gap * 100
+
+    return {
+        'mean': round(mean_inflation, 2),
+        'min': round(min_inflation, 2),
+        'gap': round(gap_inflation, 2)
+    }
 
 
 if __name__ == '__main__':

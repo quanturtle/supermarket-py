@@ -30,16 +30,58 @@ app.add_middleware(
 
 
 @app.get('/products')
-async def get_all_products(session: Session = Depends(get_session)):
-    return session.exec(select(Product).distinct(Product.sku)).all()
+async def get_products(session: Session = Depends(get_session)):
+    query = select(Product.id, Product.name, Product.sku).distinct(Product.sku)
+    return session.exec(query).mappings().all()
 
 
-@app.get('/products/{product_id}')
-async def get_product_by_id(product_id: int, session: Session = Depends(get_session)):
-    product = session.get(Product, product_id)
-    if not product:
-        raise HTTPException(status_code=404, detail='Product not found')
-    return product
+@app.get('/products/{product_sku}')
+async def get_product_by_sku(product_sku: str, session: Session = Depends(get_session)):
+    seven_days_ago = datetime.today().date() - timedelta(days=7)
+
+    price_history_stmt = (
+        select(
+            Product.supermarket_id,
+            Product.name,
+            Product.price,
+            Product.created_at
+        )
+        .where(Product.sku == product_sku)
+        .where(seven_days_ago <= Product.created_at)
+    )
+    
+    price_history = session.exec(price_history_stmt).all()
+    latest_product_prices_df = pd.DataFrame(price_history).sort_values(by=['supermarket_id', 'created_at'], ascending=[True, True])
+
+    product_price_changes = []
+    
+    for supermarket_id, group in latest_product_prices_df.groupby('supermarket_id'):
+        start_date_price = group[group['created_at'] == group['created_at'].min()]['price'].values[0]
+        end_date_price = group[group['created_at'] == group['created_at'].max()]['price'].values[0]
+        
+        # Avoid division by zero
+        if start_date_price > 0:  
+            pct_change = ((end_date_price - start_date_price) / start_date_price) * 100
+        else:
+            pct_change = 0
+            
+        # Create record for this supermarket's price change
+        price_change_record = {
+            'supermarket_id': supermarket_id,
+            'price': start_date_price,
+            'pct_change': round(pct_change, 2)
+        }
+        
+        product_price_changes.append(price_change_record)
+
+    return {
+        'history': latest_product_prices_df.to_dict(orient='records'),
+        'product_info': {
+            'name': latest_product_prices_df.iloc[0]['name'], 
+            'sku': product_sku
+        },
+        'price_changes': product_price_changes
+    }
 
 
 @app.get('/products/search/')

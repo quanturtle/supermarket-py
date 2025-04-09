@@ -35,9 +35,10 @@ async def get_products(session: Session = Depends(get_session)):
     return session.exec(query).mappings().all()
 
 
-@app.get('/products/{product_sku}')
+@app.get('/product/{product_sku}')
 async def get_product_by_sku(product_sku: str, session: Session = Depends(get_session)):
-    seven_days_ago = datetime.today().date() - timedelta(days=7)
+    # seven_days_ago = datetime.today().date() - timedelta(days=7)
+    seven_days_ago = datetime.strptime('2025-02-01', '%Y-%m-%d').date() - timedelta(days=31)
 
     price_history_stmt = (
         select(
@@ -51,6 +52,17 @@ async def get_product_by_sku(product_sku: str, session: Session = Depends(get_se
     )
     
     price_history = session.exec(price_history_stmt).all()
+    
+    if not price_history:
+        return {
+            'history': '',
+            'product_info': {
+                'name': '', 
+                'sku': ''
+            },
+            'price_changes': ''
+        }
+    
     latest_product_prices_df = pd.DataFrame(price_history).sort_values(by=['supermarket_id', 'created_at'], ascending=[True, True])
 
     product_price_changes = []

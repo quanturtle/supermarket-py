@@ -24,58 +24,88 @@ async function apiRequest<T>(endpoint: string, options: RequestInit = {}): Promi
 }
 
 
-export type Product = {
-    id: number
-    name: string
-    supermarket_id: number
-    sku: string
-    price: number
-    created_at: string
-}
-
-export type ProductList = {
+export type ProductListResult = {
     id: number
     name: string
     sku: string
 }
 
-export async function getAllProducts(): Promise<ProductList[]> {
-    return apiRequest<Product[]>("/products")
+export async function getAllProducts(): Promise<ProductListResult[]> {
+    return apiRequest<ProductListResult[]>("/products")
 }
 
-export async function getProductById(id: number): Promise<Product> {
-    return apiRequest<Product>(`/products/${id}`)
+
+export type ProductHistoryEntry = {
+    supermarket_id: number;
+    name: string;
+    price: number;
+    created_at: string;
+};
+
+export type ProductInfo = {
+    name: string;
+    sku: string;
+};
+
+export type PriceChange = {
+    supermarket_id: number;
+    price: number;
+    pct_change: number;
+};
+
+export type ProductDetailResult = {
+    history: ProductHistoryEntry[];
+    product_info: ProductInfo;
+    price_changes: PriceChange[];
+};
+
+export async function getProductBySKU(sku: string): Promise<ProductDetailResult> {
+    return apiRequest<ProductDetailResult>(`/products/${sku}`)
 }
 
-export async function searchProducts(query: string): Promise<Product[]> {
-    return apiRequest<Product[]>(`/products/search/?query=${encodeURIComponent(query)}`)
+
+export async function searchProducts(name: string): Promise<ProductListResult[]> {
+    return apiRequest<ProductListResult[]>(`/products/search/?query=${encodeURIComponent(name)}`)
 }
+
 
 export type ShoppingListItem = {
-    sku: string
-}
+    sku: string;
+    quantity: number;
+};
+
+export type ProductFull = {
+    supermarket_id: number;
+    name: string;
+    sku: string;
+    price: number;
+    created_at: string;
+};
 
 export type PriceComparisonResult = {
-    optimal: Product[]
-    best: Product[]
-    median: Product[]
-    worst: Product[]
-}
+    optimal: ProductFull[];
+    best: ProductFull[];
+    median: ProductFull[];
+    worst: ProductFull[];
+};
 
-export async function getPriceComparison(
-    shoppingList: ShoppingListItem[]
-): Promise<PriceComparisonResult> {
+export async function getPriceComparison(shoppingList: ShoppingListItem[]): Promise<PriceComparisonResult> {
     return apiRequest<PriceComparisonResult>("/price-comparison", {
         method: "POST",
         body: JSON.stringify(shoppingList),
-    })
+    });
 }
 
+export type InflationRequestBody = {
+    shopping_list: ShoppingListItem[];
+    date_range: [string, string];
+};
+
 export type InflationResult = {
-    mean: number
-    min: number
-    gap: number
-}
+    mean: number;
+    min: number;
+    gap: number;
+};
 
 export async function calculateInflation(
     shoppingList: ShoppingListItem[],
@@ -98,7 +128,7 @@ export function configureApi(config: { baseUrl?: string }) {
 
 export const API = {
     getAllProducts,
-    getProductById,
+    getProductBySKU,
     searchProducts,
     getPriceComparison,
     calculateInflation,

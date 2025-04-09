@@ -7,7 +7,7 @@ import { Card, CardContent } from "@/components/ui/card"
 import { API } from "@/lib/api/api"
 
 export default function ProductsPage() {
-    const [products, setProducts] = useState<ProductList[]>([])
+    const [products, setProducts] = useState<Product[]>([])
     const [loading, setLoading] = useState(true)
 
     useEffect(() => {
@@ -55,7 +55,7 @@ export default function ProductsPage() {
                         <h2 className="text-2xl font-bold border-b border-gray-200 pb-2">{letter}</h2>
                         <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
                             {groupedProducts[letter].map((product) => (
-                                <Link href={`/product/${product.id}`} key={product.id}>
+                                <Link href={`/product/${product.sku}`} key={product.sku}>
                                     <Card className="h-full hover:shadow-md transition-shadow">
                                         <CardContent className="p-4 flex flex-col h-full">
                                             <div className="flex justify-center mb-3">

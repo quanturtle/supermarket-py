@@ -87,10 +87,10 @@ async def get_product_by_sku(product_sku: str, session: Session = Depends(get_se
 @app.get('/products/search/')
 async def search_products(query: str, session: Session = Depends(get_session)):
     products = session.exec(
-        select(Product).where(
+        select(Product.id, Product.name, Product.sku).where(
             (Product.name.ilike(f'%{query}%'))
-        ).order_by(Product.created_at.desc())
-    ).all()
+        ).limit(5).order_by(Product.created_at.desc())
+    ).mappings().all()
     
     return products
 

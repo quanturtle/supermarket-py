@@ -16,8 +16,8 @@ import { Input } from "@/components/ui/input"
 import { toast } from "@/hooks/use-toast"
 import { API } from "@/lib/api/api"
 
-export default function ProductPage({ params }: { params: { id: string } }) {
-    const { id } = params
+export default function ProductPage({ params }: { params: { sku: string } }) {
+    const { sku } = params
     const [product, setProduct] = useState<ProductData | null>(null)
     const [loading, setLoading] = useState(true)
     const [quantity, setQuantity] = useState(1)
@@ -26,25 +26,22 @@ export default function ProductPage({ params }: { params: { id: string } }) {
         async function loadProduct() {
             try {
                 setLoading(true)
-                const productData = await API.getProductById(id)
+                const productData = await API.getProductBySKU(sku)
                 setProduct(productData)
             } catch (error) {
-                console.error("Error loading product:", error)
+                console.error("Error loading product")
             } finally {
                 setLoading(false)
             }
         }
 
         loadProduct()
-    }, [id])
+    }, [sku])
 
     const addToCart = async () => {
         if (!product) return
 
         try {
-            // Simulate API call to add to cart
-            await API.addToCart(product.id, quantity)
-
             // Get existing cart from localStorage
             const savedCart = localStorage.getItem("priceTrackerCart")
             let cart = []

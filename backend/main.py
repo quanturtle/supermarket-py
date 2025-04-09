@@ -42,40 +42,44 @@ async def search_products(query: str, session: Session = Depends(get_session)):
 
 @app.post("/price-comparison")
 async def price_comparison(shopping_list: List[dict], session: Session = Depends(get_session)):
-    shopping_list = [{'sku': 'BREAD-WHT-500G', 'quantity': 1}]
-    sku = 'BREAD-WHT-500G'
+    # shopping_list = [{'sku': 'BREAD-WHT-500G', 'quantity': 1}, {'sku': 'EGGS-LRG-12CT', 'quantity': 1}]
     
-    # ROW_NUMBER() OVER(PARTITION BY product.supermarket_id, ORDER BY product.created_at DESC)
-    row_number_expr = func.row_number().over(
-        partition_by=Product.supermarket_id,
-        order_by=desc(Product.created_at)
-    )
-
-    subquery = (
-        select(
-            Product.id,
-            Product.supermarket_id,
-            Product.name,
-            Product.sku,
-            Product.price,
-            Product.created_at,
-            row_number_expr.label("row_n")
+    all_results = []
+    
+    for prod in shopping_list:
+        # ROW_NUMBER() OVER(PARTITION BY product.supermarket_id, ORDER BY product.created_at DESC)
+        row_number_expr = func.row_number().over(
+            partition_by=Product.supermarket_id,
+            order_by=desc(Product.created_at)
         )
-        .where(Product.sku == sku)
-        .subquery()
-    )
 
-    stmt = (
-        select(subquery.c.supermarket_id,
-               subquery.c.name,
-               subquery.c.sku,
-               subquery.c.price,
-               subquery.c.created_at)
-        .where(subquery.c.row_n == 1)
-    )
+        subquery = (
+            select(
+                Product.id,
+                Product.supermarket_id,
+                Product.name,
+                Product.sku,
+                Product.price,
+                Product.created_at,
+                row_number_expr.label('row_n')
+            )
+            .where(Product.sku == prod['sku'])
+            .subquery()
+        )
 
-    results = session.exec(stmt).all()
-    print(pd.DataFrame(results).sort_values(by='price', ascending=True))
+        stmt = (
+            select(subquery.c.supermarket_id,
+                subquery.c.name,
+                subquery.c.sku,
+                subquery.c.price,
+                subquery.c.created_at)
+            .where(subquery.c.row_n == 1)
+        )
+
+        results = session.exec(stmt).all()
+        all_results += results
+        
+    print(pd.DataFrame(all_results).sort_values(by='price', ascending=True))
     
     return {"status": "/products/price-comparison"}
 

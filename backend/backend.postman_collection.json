@@ -89,7 +89,7 @@
 				"header": [],
 				"body": {
 					"mode": "raw",
-					"raw": "[\n    {\n        \"sku\": \"BREAD-WHT-500G\", \n        \"quantity\": 1\n    }\n]",
+					"raw": "[\n    {\n        \"sku\": \"BREAD-WHT-500G\", \n        \"quantity\": 1\n    },\n    {\n        \"sku\": \"EGGS-LRG-12CT\", \n        \"quantity\": 1\n    }\n]",
 					"options": {
 						"raw": {
 							"language": "json"

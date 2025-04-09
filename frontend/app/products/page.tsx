@@ -1,14 +1,13 @@
 "use client"
-
 import { useEffect, useState } from "react"
 import Link from "next/link"
 import Image from "next/image"
-import type { ProductData } from "@/lib/data/product-data"
+import type { Product } from "@/lib/api/api"
 import { Card, CardContent } from "@/components/ui/card"
 import { API } from "@/lib/api/api"
 
 export default function ProductsPage() {
-    const [products, setProducts] = useState<ProductData[]>([])
+    const [products, setProducts] = useState<ProductList[]>([])
     const [loading, setLoading] = useState(true)
 
     useEffect(() => {
@@ -23,7 +22,6 @@ export default function ProductsPage() {
                 setLoading(false)
             }
         }
-
         loadProducts()
     }, [])
 
@@ -36,8 +34,7 @@ export default function ProductsPage() {
     }
 
     // Group products by first letter - moved here after loading check
-    const groupedProducts: Record<string, ProductData[]> = {}
-
+    const groupedProducts: Record<string, Product[]> = {}
     products.forEach((product) => {
         const firstLetter = product.name.charAt(0).toUpperCase()
         if (!groupedProducts[firstLetter]) {
@@ -52,7 +49,6 @@ export default function ProductsPage() {
     return (
         <>
             <h1 className="text-3xl font-bold mb-6">All Products</h1>
-
             <div className="space-y-8">
                 {letters.map((letter) => (
                     <div key={letter} className="space-y-4">
@@ -64,7 +60,7 @@ export default function ProductsPage() {
                                         <CardContent className="p-4 flex flex-col h-full">
                                             <div className="flex justify-center mb-3">
                                                 <Image
-                                                    src={product.image || "/placeholder.svg"}
+                                                    src={product.sku ? `/images/${product.sku}.jpg` : "/placeholder.svg"}
                                                     alt={product.name}
                                                     width={80}
                                                     height={80}
@@ -72,10 +68,8 @@ export default function ProductsPage() {
                                                 />
                                             </div>
                                             <h3 className="font-medium text-base mb-1">{product.name}</h3>
-                                            <p className="text-sm text-gray-500 mb-2 line-clamp-2">{product.description}</p>
                                             <div className="mt-auto flex justify-between items-center">
                                                 <span className="text-sm text-gray-500">SKU: {product.sku}</span>
-                                                <span className="font-bold text-sm">${product.lowestPrice.price.toFixed(2)}</span>
                                             </div>
                                         </CardContent>
                                     </Card>

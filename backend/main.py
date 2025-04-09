@@ -6,6 +6,7 @@ import pandas as pd
 from sqlmodel import Session, select
 from sqlalchemy import func, desc, over
 from fastapi import FastAPI, Depends, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
 from models import Product, get_session
 
 
@@ -16,9 +17,21 @@ app = FastAPI(
 )
 
 
+origins = [
+    "http://localhost:3000",
+]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_methods=['GET', 'POST'],
+    allow_headers=['*'],
+)
+
+
 @app.get('/products')
 async def get_all_products(session: Session = Depends(get_session)):
-    return session.exec(select(Product)).all()
+    return session.exec(select(Product).distinct(Product.sku)).all()
 
 
 @app.get('/products/{product_id}')

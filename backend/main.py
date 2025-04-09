@@ -42,8 +42,6 @@ async def search_products(query: str, session: Session = Depends(get_session)):
 
 @app.post("/price-comparison")
 async def price_comparison(shopping_list: List[dict], session: Session = Depends(get_session)):
-    # shopping_list = [{'sku': 'BREAD-WHT-500G', 'quantity': 1}, {'sku': 'EGGS-LRG-12CT', 'quantity': 1}]
-    
     all_results = []
     
     for prod in shopping_list:
@@ -53,6 +51,7 @@ async def price_comparison(shopping_list: List[dict], session: Session = Depends
             order_by=desc(Product.created_at)
         )
 
+        # SELECT *, ROW_NUMBER() OVER(...) FROM products
         subquery = (
             select(
                 Product.id,
@@ -67,8 +66,10 @@ async def price_comparison(shopping_list: List[dict], session: Session = Depends
             .subquery()
         )
 
+        # SELECT * FROM subquery WHERE row_num == 1
         stmt = (
-            select(subquery.c.supermarket_id,
+            select(
+                subquery.c.supermarket_id,
                 subquery.c.name,
                 subquery.c.sku,
                 subquery.c.price,
@@ -79,9 +80,33 @@ async def price_comparison(shopping_list: List[dict], session: Session = Depends
         results = session.exec(stmt).all()
         all_results += results
         
-    print(pd.DataFrame(all_results).sort_values(by='price', ascending=True))
-    
-    return {"status": "/products/price-comparison"}
+    price_df = pd.DataFrame(all_results).sort_values(by='price', ascending=True)
+
+    # for each product, lowest prices regardless of supermarket
+    optimal_df = price_df.loc[price_df.groupby('sku')['price'].idxmin()]
+
+    # group by supermarket and get the shopping list price
+    price_totals_df = price_df.groupby('supermarket_id')['price'].sum().sort_values(ascending=True)
+
+    # best
+    best_supermarket_id = price_totals_df.idxmin()
+    best_supermarket_df = price_df[price_df["supermarket_id"] == best_supermarket_id]
+
+    # median
+    median_idx = len(price_totals_df) // 2
+    median_supermarket_id = price_totals_df.index[median_idx]
+    median_supermarket_df = price_df[price_df["supermarket_id"] == median_supermarket_id]
+
+    # worst
+    worst_supermarket_id = price_totals_df.idxmax()
+    worst_supermarket_df = price_df[price_df["supermarket_id"] == worst_supermarket_id]
+
+    return {
+        "optimal": optimal_df.to_dict(orient='records'),
+        "best": best_supermarket_df.to_dict(orient='records'),
+        "median": median_supermarket_df.to_dict(orient='records'),
+        "worst": worst_supermarket_df.to_dict(orient='records')
+    }
 
 
 @app.post("/inflation")

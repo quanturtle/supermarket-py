@@ -37,8 +37,22 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const [comparisonResults, setComparisonResults] = useState<PriceComparisonResult | null>(null)
   const [productsLoaded, setProductsLoaded] = useState(false)
 
-  // Load cart from localStorage on initial render
+  // Initialize cart on first render
   useEffect(() => {
+    // Create a new session cart if one doesn't exist
+    if (typeof window !== "undefined") {
+      if (!sessionStorage.getItem("priceTrackerCart")) {
+        sessionStorage.setItem("priceTrackerCart", JSON.stringify([]))
+        console.log("Created new empty session cart")
+      }
+
+      if (!sessionStorage.getItem("priceTrackerSelectedProducts")) {
+        sessionStorage.setItem("priceTrackerSelectedProducts", JSON.stringify([]))
+        console.log("Created new empty session selected products")
+      }
+    }
+
+    // Load cart from sessionStorage
     const savedCart = getCart()
     setCart(savedCart)
 
@@ -49,21 +63,21 @@ export function CartProvider({ children }: { children: ReactNode }) {
     loadProducts()
   }, [])
 
-  // Cart functions using localStorage
+  // Cart functions using sessionStorage
   const getCart = (): CartItem[] => {
     try {
-      const cartJson = localStorage.getItem("priceTrackerCart")
+      const cartJson = sessionStorage.getItem("priceTrackerCart")
       return cartJson ? JSON.parse(cartJson) : []
     } catch (error) {
-      console.error("Error getting cart from localStorage:", error)
+      console.error("Error getting cart from sessionStorage:", error)
       return []
     }
   }
 
   const addToCartLocal = (sku: string, quantity: number): boolean => {
     try {
-      // Get current cart from localStorage
-      const cartJson = localStorage.getItem("priceTrackerCart")
+      // Get current cart from sessionStorage
+      const cartJson = sessionStorage.getItem("priceTrackerCart")
       let cart = []
 
       if (cartJson) {
@@ -83,8 +97,8 @@ export function CartProvider({ children }: { children: ReactNode }) {
         cart = [{ sku, quantity }]
       }
 
-      // Save updated cart to localStorage
-      localStorage.setItem("priceTrackerCart", JSON.stringify(cart))
+      // Save updated cart to sessionStorage
+      sessionStorage.setItem("priceTrackerCart", JSON.stringify(cart))
 
       return true
     } catch (error) {
@@ -97,7 +111,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
     try {
       const cart = getCart()
       const updatedCart = cart.map((item) => (item.sku === sku ? { ...item, quantity } : item))
-      localStorage.setItem("priceTrackerCart", JSON.stringify(updatedCart))
+      sessionStorage.setItem("priceTrackerCart", JSON.stringify(updatedCart))
       return true
     } catch (error) {
       console.error("Error updating cart item quantity:", error)
@@ -109,7 +123,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
     try {
       const cart = getCart()
       const updatedCart = cart.filter((item) => item.sku !== sku)
-      localStorage.setItem("priceTrackerCart", JSON.stringify(updatedCart))
+      sessionStorage.setItem("priceTrackerCart", JSON.stringify(updatedCart))
       return true
     } catch (error) {
       console.error("Error removing item from cart:", error)
@@ -119,7 +133,8 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
   const clearCartLocal = (): boolean => {
     try {
-      localStorage.removeItem("priceTrackerCart")
+      sessionStorage.removeItem("priceTrackerCart")
+      sessionStorage.setItem("priceTrackerCart", JSON.stringify([]))
       return true
     } catch (error) {
       console.error("Error clearing cart:", error)
@@ -129,7 +144,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
   const getSelectedProducts = (): string[] => {
     try {
-      const selectedJson = localStorage.getItem("priceTrackerSelectedProducts")
+      const selectedJson = sessionStorage.getItem("priceTrackerSelectedProducts")
       return selectedJson ? JSON.parse(selectedJson) : []
     } catch (error) {
       console.error("Error getting selected products:", error)
@@ -139,7 +154,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
   const setSelectedProductsLocal = (skus: string[]): boolean => {
     try {
-      localStorage.setItem("priceTrackerSelectedProducts", JSON.stringify(skus))
+      sessionStorage.setItem("priceTrackerSelectedProducts", JSON.stringify(skus))
       return true
     } catch (error) {
       console.error("Error setting selected products:", error)
@@ -161,7 +176,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
         isSelected = true
       }
 
-      localStorage.setItem("priceTrackerSelectedProducts", JSON.stringify(newSelected))
+      sessionStorage.setItem("priceTrackerSelectedProducts", JSON.stringify(newSelected))
       return { success: true, selected: isSelected }
     } catch (error) {
       console.error("Error toggling product selection:", error)
@@ -173,7 +188,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
     try {
       const cart = getCart()
       const allSkus = cart.map((item) => item.sku)
-      localStorage.setItem("priceTrackerSelectedProducts", JSON.stringify(allSkus))
+      sessionStorage.setItem("priceTrackerSelectedProducts", JSON.stringify(allSkus))
       return true
     } catch (error) {
       console.error("Error selecting all products:", error)
@@ -183,7 +198,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
   const deselectAllProductsLocal = (): boolean => {
     try {
-      localStorage.setItem("priceTrackerSelectedProducts", JSON.stringify([]))
+      sessionStorage.setItem("priceTrackerSelectedProducts", JSON.stringify([]))
       return true
     } catch (error) {
       console.error("Error deselecting all products:", error)
@@ -205,7 +220,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
   }
 
   const addToCart = (sku: string, quantity = 1) => {
-    // First update localStorage
+    // First update sessionStorage
     const success = addToCartLocal(sku, quantity)
 
     if (success) {

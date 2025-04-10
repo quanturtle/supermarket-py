@@ -14,8 +14,8 @@ import { useCart } from "@/hooks/use-cart"
 
 export default function ProductPage({ params }: { params: { sku: string } }) {
   // Unwrap params using React.use()
-  const unwrappedParams = use(params)
-  const { sku } = unwrappedParams
+  // const unwrappedParams = use(params)
+  const { sku } = params
 
   const { addToCart } = useCart()
 

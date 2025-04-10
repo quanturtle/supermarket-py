@@ -12,11 +12,12 @@ export function PriceHistoryChart({ history }: PriceHistoryChartProps) {
     return <div className="w-full h-full flex items-center justify-center">No price history data available</div>
   }
 
-  // Group by date (month/year)
+  // Group by exact date (yyyy-mm-dd)
   const groupedByDate = history.reduce(
     (acc, entry) => {
       const date = new Date(entry.created_at)
-      const dateKey = `${date.toLocaleString("default", { month: "short" })} ${date.getFullYear()}`
+      // Format date as yyyy-mm-dd
+      const dateKey = date.toISOString().split("T")[0]
 
       if (!acc[dateKey]) {
         acc[dateKey] = {}
@@ -41,9 +42,7 @@ export function PriceHistoryChart({ history }: PriceHistoryChartProps) {
     })
     .sort((a, b) => {
       // Sort by date
-      const dateA = new Date(a.date)
-      const dateB = new Date(b.date)
-      return dateA.getTime() - dateB.getTime()
+      return new Date(a.date).getTime() - new Date(b.date).getTime()
     })
 
   // Get all supermarket names from the first data point
@@ -72,7 +71,7 @@ export function PriceHistoryChart({ history }: PriceHistoryChartProps) {
           }}
         >
           <CartesianGrid strokeDasharray="3 3" />
-          <XAxis dataKey="date" />
+          <XAxis dataKey="date" angle={-45} textAnchor="end" height={80} tick={{ fontSize: 12 }} />
           <YAxis />
           <Tooltip
             formatter={(value, name) => {

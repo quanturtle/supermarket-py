@@ -15,9 +15,7 @@ export default function RootLayout({
         <CartProvider>
           <div className="flex min-h-screen flex-col bg-gray-50">
             <CustomNavbar />
-            <div className="container mx-auto flex-1 px-4 py-6 md:px-6 max-w-7xl">
-              {children}
-            </div>
+            <div className="container mx-auto flex-1 px-4 py-6 md:px-6 max-w-7xl">{children}</div>
             <CustomFooter />
           </div>
         </CartProvider>
@@ -25,3 +23,10 @@ export default function RootLayout({
     </html>
   )
 }
+
+
+import './globals.css'
+
+export const metadata = {
+      generator: 'v0.dev'
+    };

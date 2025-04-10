@@ -3,7 +3,7 @@ from datetime import datetime, timedelta
 
 import uvicorn
 import pandas as pd
-from sqlmodel import Session, select
+from sqlmodel import Session, select, or_
 from sqlalchemy import func, desc, over
 from fastapi import FastAPI, Depends, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
@@ -70,13 +70,13 @@ async def get_product_by_sku(product_sku: str, session: Session = Depends(get_se
         start_date_price = group[group['created_at'] == group['created_at'].min()]['price'].values[0]
         end_date_price = group[group['created_at'] == group['created_at'].max()]['price'].values[0]
         
-        # Avoid division by zero
+        # avoid division by zero
         if start_date_price > 0:  
             pct_change = ((end_date_price - start_date_price) / start_date_price) * 100
         else:
             pct_change = 0
             
-        # Create record for this supermarket's price change
+        # create record for this supermarket's price change
         price_change_record = {
             'supermarket_id': supermarket_id,
             'price': start_date_price,
@@ -172,24 +172,8 @@ async def price_comparison(shopping_list: List[dict], session: Session = Depends
     }
 
 
-@app.post('/inflation')
-async def calculate_inflation(shopping_list: List[Dict], date_range: List[str], session: Session = Depends(get_session)):
-    start_date, end_date = date_range
-    start_date, end_date = datetime.strptime(start_date, '%Y-%m-%d').date(), datetime.strptime(end_date, '%Y-%m-%d').date()
-    
-    all_prods = []
-    for prod in shopping_list:
-        products = session.exec(
-            select(Product).where(
-                (Product.sku == prod['sku']) and ((Product.created_at == start_date) or (Product.created_at == end_date))
-            ).order_by(Product.created_at.desc())
-        ).all()
-
-        all_prods += products
-    
-    inflation_df = pd.DataFrame.from_records([i.dict() for i in all_prods])
-    inflation_df['created_at'] = pd.to_datetime(inflation_df['created_at']).dt.date
-    
+def compute_global_inflation(inflation_df: pd.DataFrame, start_date: datetime, end_date: datetime) -> Dict:
+    # group by and compute gap
     inflation_by_date_df = inflation_df.groupby(by='created_at')['price'].agg(['min', 'max', 'mean']).reset_index()
     inflation_by_date_df['gap'] = inflation_by_date_df['max'] - inflation_by_date_df['min']
 
@@ -209,10 +193,80 @@ async def calculate_inflation(shopping_list: List[Dict], date_range: List[str], 
     gap_inflation = (end_gap - start_gap) / start_gap * 100
 
     return {
-        'mean': round(mean_inflation, 2),
-        'min': round(min_inflation, 2),
-        'gap': round(gap_inflation, 2)
+        'mean_inflation': {
+            'start_price': round(start_mean, 2),
+            'end_price': round(end_mean, 2),
+            'absolute_change': round(abs(end_mean - start_mean), 2),
+            'inflation_rate': round(mean_inflation, 2)
+        },
+        'min_inflation': {
+            'start_price': round(start_min, 2),
+            'end_price': round(end_min, 2),
+            'absolute_change': round(abs(end_min - start_min), 2),
+            'inflation_rate': round(min_inflation, 2)
+        },
+        'gap_inflation': {
+            'start_price': round(start_gap, 2),
+            'end_price': round(end_gap, 2),
+            'absolute_change': round(abs(end_gap - start_gap), 2),
+            'inflation_rate': round(gap_inflation, 2)
+        }
     }
+
+
+def compute_per_product_inflation(inflation_df: pd.DataFrame, start_date: datetime, end_date: datetime): #-> List[Dict]:
+    unique_skus = inflation_df['sku'].unique()
+
+    results = []
+    
+    for sku in unique_skus:
+        product_df = inflation_df[inflation_df['sku']==sku]
+        product_name = product_df['name'].iloc[0]
+
+        start_avg_price = product_df[product_df['created_at'] == start_date]['price'].mean()
+        end_avg_price = product_df[product_df['created_at'] == end_date]['price'].mean()
+
+        if start_avg_price > 0:  # Avoid division by zero
+            inflation_rate = ((end_avg_price - start_avg_price) / start_avg_price) * 100
+        else:
+            inflation_rate = 0
+
+        results.append({
+            'sku': sku,
+            'name': product_name,
+            'inflation_rate': round(inflation_rate, 2)
+        })
+
+    return results
+
+
+@app.post('/inflation')
+async def calculate_inflation(shopping_list: List[Dict], date_range: List[str], session: Session = Depends(get_session)):
+    start_date, end_date = date_range
+    start_date, end_date = datetime.strptime(start_date, '%Y-%m-%d').date(), datetime.strptime(end_date, '%Y-%m-%d').date()
+    
+    skus = [prod['sku'] for prod in shopping_list]
+    
+    all_prods = session.exec(
+        select(Product).where(Product.sku.in_(skus)).where(
+            or_(
+                func.date(Product.created_at) == start_date, 
+                func.date(Product.created_at) == end_date
+            )
+        )
+    ).all()
+    
+    inflation_df = pd.DataFrame.from_records([dict(i) for i in all_prods])
+    inflation_df['created_at'] = pd.to_datetime(inflation_df['created_at']).dt.date
+    
+    global_inflation = compute_global_inflation(inflation_df, start_date, end_date)
+    per_product_inflation = compute_per_product_inflation(inflation_df, start_date, end_date)
+    
+    return {
+        'global_inflation': global_inflation,
+        'per_product_inflation': per_product_inflation
+    }
+    
 
 
 if __name__ == '__main__':

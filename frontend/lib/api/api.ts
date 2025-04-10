@@ -123,7 +123,7 @@ async function apiRequest<T>(url: string, options?: RequestInit, fallbackData?: 
 
 // Get all products
 export async function getAllProducts(): Promise<ProductListResult[]> {
-  return apiRequest(`${API_CONFIG.baseUrl}/products/`, undefined, MOCK_PRODUCTS)
+  return apiRequest(`${API_CONFIG.baseUrl}/catalog/`, undefined, MOCK_PRODUCTS)
 }
 
 // Get product by SKU

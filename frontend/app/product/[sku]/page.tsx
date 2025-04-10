@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useState, use } from "react"
 import Link from "next/link"
 import { ArrowLeft, ShoppingCart, Plus, Minus } from "lucide-react"
 import { Button } from "@/components/ui/button"
@@ -13,7 +13,10 @@ import { API, type ProductDetailResult } from "@/lib/api/api"
 import { useCart } from "@/hooks/use-cart"
 
 export default function ProductPage({ params }: { params: { sku: string } }) {
-  const { sku } = params
+  // Unwrap params using React.use()
+  const unwrappedParams = use(params)
+  const { sku } = unwrappedParams
+
   const { addToCart } = useCart()
 
   const [product, setProduct] = useState<ProductDetailResult | null>(null)

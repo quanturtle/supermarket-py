@@ -29,8 +29,8 @@ app.add_middleware(
 )
 
 
-@app.get('/products')
-async def get_products(session: Session = Depends(get_session)):
+@app.get('/catalog')
+async def get_catalog(session: Session = Depends(get_session)):
     query = select(Product.id, Product.name, Product.sku).distinct(Product.sku)
     return session.exec(query).mappings().all()
 
@@ -100,7 +100,7 @@ async def search_products(query: str, session: Session = Depends(get_session)):
     products = session.exec(
         select(Product.id, Product.name, Product.sku).where(
             (Product.name.ilike(f'%{query}%'))
-        ).limit(5).order_by(Product.created_at.desc())
+        ).limit(1).order_by(Product.created_at.desc())
     ).mappings().all()
     
     return products

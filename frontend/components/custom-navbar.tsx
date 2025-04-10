@@ -22,21 +22,21 @@ export function CustomNavbar() {
             className="text-sm font-medium hover:underline underline-offset-4 flex items-center gap-1"
           >
             <Package className="h-4 w-4" />
-            <span>Catalog</span>
+            <span className="hidden sm:inline">Catalog</span>
           </Link>
           <Link
             href="/inflation-calculator"
             className="text-sm font-medium hover:underline underline-offset-4 flex items-center gap-1"
           >
             <LineChart className="h-4 w-4" />
-            <span>Inflation Calculator</span>
+            <span className="hidden sm:inline">Inflation Calculator</span>
           </Link>
           <Link
             href="/cart"
             className="text-sm font-medium hover:underline underline-offset-4 flex items-center gap-1 relative"
           >
             <ShoppingCart className="h-4 w-4" />
-            <span>Compare Carts</span>
+            <span className="hidden sm:inline">Compare Carts</span>
             {uniqueProductCount > 0 && (
               <span className="absolute -top-2 -right-2 bg-blue-600 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
                 {uniqueProductCount}
@@ -44,10 +44,10 @@ export function CustomNavbar() {
             )}
           </Link>
           <Link href="/about" className="text-sm font-medium hover:underline underline-offset-4">
-            <span>About</span>
+            <span className="hidden sm:inline">About</span>
           </Link>
           <Link href="/contact" className="text-sm font-medium hover:underline underline-offset-4">
-            <span>Contact</span>
+            <span className="hidden sm:inline">Contact</span>
           </Link>
         </nav>
       </div>

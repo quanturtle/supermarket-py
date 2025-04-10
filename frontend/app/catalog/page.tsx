@@ -6,7 +6,7 @@ import Image from "next/image"
 import { Card, CardContent } from "@/components/ui/card"
 import { API } from "@/lib/api/api"
 
-export default function ProductsPage() {
+export default function CatalogPage() {
   const [products, setProducts] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
 

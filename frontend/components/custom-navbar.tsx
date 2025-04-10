@@ -18,11 +18,11 @@ export function CustomNavbar() {
         </Link>
         <nav className="ml-auto flex gap-4 sm:gap-6 items-center">
           <Link
-            href="/products"
+            href="/catalog"
             className="text-sm font-medium hover:underline underline-offset-4 flex items-center gap-1"
           >
             <Package className="h-4 w-4" />
-            <span>Products</span>
+            <span>Catalog</span>
           </Link>
           <Link
             href="/inflation-calculator"

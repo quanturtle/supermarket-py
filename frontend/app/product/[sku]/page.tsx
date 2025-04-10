@@ -60,10 +60,10 @@ export default function ProductPage({ params }: { params: { sku: string } }) {
       <div className="container flex flex-col items-center justify-center min-h-screen gap-4">
         <h1 className="text-2xl font-bold">Product not found</h1>
         <p>We couldn't find the product you're looking for.</p>
-        <Link href="/products">
+        <Link href="/catalog">
           <Button>
             <ArrowLeft className="mr-2 h-4 w-4" />
-            Back to Products
+            Back to Catalog
           </Button>
         </Link>
       </div>
@@ -73,11 +73,11 @@ export default function ProductPage({ params }: { params: { sku: string } }) {
   return (
     <>
       <Link
-        href="/products"
+        href="/catalog"
         className="inline-flex items-center mb-3 text-sm font-medium text-gray-500 hover:text-gray-700"
       >
         <ArrowLeft className="mr-2 h-4 w-4" />
-        Back to products
+        Back to catalog
       </Link>
 
       {/* Product Title */}

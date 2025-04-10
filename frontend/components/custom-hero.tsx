@@ -26,7 +26,7 @@ export function CustomHero() {
             <p className="text-xs text-gray-500">Popular searches: Milk, Bread, Eggs, Bananas, Coffee</p>
           </div>
           <div className="flex flex-wrap justify-center gap-4 mt-8">
-            <Link href="/products">
+            <Link href="/catalog">
               <Button className="rounded-full">Browse All Products</Button>
             </Link>
             <Link href="/product/MILK-1L-WHL">

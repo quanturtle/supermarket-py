@@ -268,6 +268,19 @@ async def calculate_inflation(shopping_list: List[Dict], date_range: List[str], 
         'per_product_inflation': per_product_inflation
     }
     
+@app.get('/inflation/date-range')
+async def available_date_range(session: Session = Depends(get_session)):
+    date_range = session.exec(
+        select(
+            func.min(Product.created_at),
+            func.max(Product.created_at)
+        )
+    ).mappings().first()
+    
+    return {
+        'start_date': date_range['min'].date(),
+        'end_date': date_range['max'].date()
+    }
 
 
 if __name__ == '__main__':

@@ -1,5 +1,5 @@
-// Mock products for fallback - reduced to only include products with detailed information
-export const MOCK_PRODUCTS: ProductListResult[] = [
+// Mock products
+export const MOCK_PRODUCTS = [
   {
     id: 97,
     name: "White Bread (500g)",
@@ -21,87 +21,39 @@ export const MOCK_PRODUCTS: ProductListResult[] = [
     sku: "FRUIT-BAN-1KG",
   },
   {
-    id: 1,
+    id: 55,
     name: "Whole Milk (1 Gallon)",
     sku: "MILK-1GAL-WHL",
   },
 ]
 
-// Mock product detail for fallback
-export const MOCK_PRODUCT_DETAILS: Record<string, ProductDetailResult> = {
+// Mock product details
+export const MOCK_PRODUCT_DETAILS: Record<string, any> = {
   "BREAD-WHT-500G": {
     history: [
       {
         supermarket_id: 1,
         name: "White Bread (500g)",
         price: 1.49,
-        created_at: "2025-01-01 08:05:00",
+        created_at: "2025-01-01T08:05:00",
       },
       {
         supermarket_id: 1,
         name: "White Bread (500g)",
         price: 1.59,
-        created_at: "2025-02-01 08:05:00",
-      },
-      {
-        supermarket_id: 1,
-        name: "White Bread (500g)",
-        price: 1.69,
-        created_at: "2025-03-01 08:05:00",
-      },
-      {
-        supermarket_id: 1,
-        name: "White Bread (500g)",
-        price: 1.79,
-        created_at: "2025-04-01 08:05:00",
-      },
-      {
-        supermarket_id: 2,
-        name: "White Bread (500g)",
-        price: 1.39,
-        created_at: "2025-01-01 09:15:00",
-      },
-      {
-        supermarket_id: 2,
-        name: "White Bread (500g)",
-        price: 1.49,
-        created_at: "2025-02-01 09:15:00",
+        created_at: "2025-02-01T08:05:00",
       },
       {
         supermarket_id: 2,
         name: "White Bread (500g)",
         price: 1.59,
-        created_at: "2025-03-01 09:15:00",
+        created_at: "2025-01-01T08:35:00",
       },
       {
         supermarket_id: 2,
         name: "White Bread (500g)",
         price: 1.69,
-        created_at: "2025-04-01 09:15:00",
-      },
-      {
-        supermarket_id: 3,
-        name: "White Bread (500g)",
-        price: 1.59,
-        created_at: "2025-01-01 10:25:00",
-      },
-      {
-        supermarket_id: 3,
-        name: "White Bread (500g)",
-        price: 1.69,
-        created_at: "2025-02-01 10:25:00",
-      },
-      {
-        supermarket_id: 3,
-        name: "White Bread (500g)",
-        price: 1.79,
-        created_at: "2025-03-01 10:25:00",
-      },
-      {
-        supermarket_id: 3,
-        name: "White Bread (500g)",
-        price: 1.89,
-        created_at: "2025-04-01 10:25:00",
+        created_at: "2025-02-01T08:35:00",
       },
     ],
     product_info: {
@@ -111,28 +63,13 @@ export const MOCK_PRODUCT_DETAILS: Record<string, ProductDetailResult> = {
     price_changes: [
       {
         supermarket_id: 1,
-        price: 1.79,
-        pct_change: 0.06,
+        price: 1.49,
+        pct_change: 2.0,
       },
       {
         supermarket_id: 2,
-        price: 1.69,
-        pct_change: 0.06,
-      },
-      {
-        supermarket_id: 3,
-        price: 1.89,
-        pct_change: 0.06,
-      },
-      {
-        supermarket_id: 4,
         price: 1.59,
         pct_change: 0.0,
-      },
-      {
-        supermarket_id: 5,
-        price: 1.75,
-        pct_change: -0.03,
       },
     ],
   },
@@ -141,74 +78,26 @@ export const MOCK_PRODUCT_DETAILS: Record<string, ProductDetailResult> = {
       {
         supermarket_id: 1,
         name: "Eggs (Dozen)",
-        price: 2.99,
-        created_at: "2025-01-01 08:10:00",
+        price: 3.29,
+        created_at: "2025-01-01T08:10:00",
       },
       {
         supermarket_id: 1,
         name: "Eggs (Dozen)",
         price: 3.19,
-        created_at: "2025-02-01 08:10:00",
-      },
-      {
-        supermarket_id: 1,
-        name: "Eggs (Dozen)",
-        price: 3.29,
-        created_at: "2025-03-01 08:10:00",
-      },
-      {
-        supermarket_id: 1,
-        name: "Eggs (Dozen)",
-        price: 3.49,
-        created_at: "2025-04-01 08:10:00",
-      },
-      {
-        supermarket_id: 2,
-        name: "Eggs (Dozen)",
-        price: 2.89,
-        created_at: "2025-01-01 09:20:00",
-      },
-      {
-        supermarket_id: 2,
-        name: "Eggs (Dozen)",
-        price: 3.09,
-        created_at: "2025-02-01 09:20:00",
-      },
-      {
-        supermarket_id: 2,
-        name: "Eggs (Dozen)",
-        price: 3.19,
-        created_at: "2025-03-01 09:20:00",
+        created_at: "2025-02-01T08:10:00",
       },
       {
         supermarket_id: 2,
         name: "Eggs (Dozen)",
         price: 3.39,
-        created_at: "2025-04-01 09:20:00",
+        created_at: "2025-01-01T08:40:00",
       },
       {
-        supermarket_id: 3,
-        name: "Eggs (Dozen)",
-        price: 3.09,
-        created_at: "2025-01-01 10:30:00",
-      },
-      {
-        supermarket_id: 3,
+        supermarket_id: 2,
         name: "Eggs (Dozen)",
         price: 3.29,
-        created_at: "2025-02-01 10:30:00",
-      },
-      {
-        supermarket_id: 3,
-        name: "Eggs (Dozen)",
-        price: 3.39,
-        created_at: "2025-03-01 10:30:00",
-      },
-      {
-        supermarket_id: 3,
-        name: "Eggs (Dozen)",
-        price: 3.59,
-        created_at: "2025-04-01 10:30:00",
+        created_at: "2025-02-01T08:40:00",
       },
     ],
     product_info: {
@@ -218,28 +107,13 @@ export const MOCK_PRODUCT_DETAILS: Record<string, ProductDetailResult> = {
     price_changes: [
       {
         supermarket_id: 1,
-        price: 3.49,
-        pct_change: 0.06,
+        price: 3.29,
+        pct_change: -3.0,
       },
       {
         supermarket_id: 2,
         price: 3.39,
-        pct_change: 0.06,
-      },
-      {
-        supermarket_id: 3,
-        price: 3.59,
-        pct_change: 0.06,
-      },
-      {
-        supermarket_id: 4,
-        price: 3.29,
-        pct_change: 0.0,
-      },
-      {
-        supermarket_id: 5,
-        price: 3.45,
-        pct_change: -0.03,
+        pct_change: -2.9,
       },
     ],
   },
@@ -249,79 +123,25 @@ export const MOCK_PRODUCT_DETAILS: Record<string, ProductDetailResult> = {
         supermarket_id: 1,
         name: "Whole Milk (1 Liter)",
         price: 1.19,
-        created_at: "2025-01-01 08:15:00",
+        created_at: "2025-01-01T08:15:00",
       },
       {
         supermarket_id: 1,
         name: "Whole Milk (1 Liter)",
         price: 1.29,
-        created_at: "2025-02-01 08:15:00",
-      },
-      {
-        supermarket_id: 1,
-        name: "Whole Milk (1 Liter)",
-        price: 1.39,
-        created_at: "2025-03-01 08:15:00",
-      },
-      {
-        supermarket_id: 1,
-        name: "Whole Milk (1 Liter)",
-        price: 1.49,
-        created_at: "2025-04-01 08:15:00",
-      },
-      {
-        supermarket_id: 2,
-        name: "Whole Milk (1 Liter)",
-        price: 1.09,
-        created_at: "2025-01-01 09:25:00",
-      },
-      {
-        supermarket_id: 2,
-        name: "Whole Milk (1 Liter)",
-        price: 1.19,
-        created_at: "2025-02-01 09:25:00",
+        created_at: "2025-02-01T08:15:00",
       },
       {
         supermarket_id: 2,
         name: "Whole Milk (1 Liter)",
         price: 1.29,
-        created_at: "2025-03-01 09:25:00",
+        created_at: "2025-01-01T08:45:00",
       },
       {
         supermarket_id: 2,
         name: "Whole Milk (1 Liter)",
         price: 1.39,
-        created_at: "2025-04-01 09:25:00",
-      },
-      {
-        supermarket_id: 3,
-        name: "Whole Milk (1 Liter)",
-        price: 1.29,
-        created_at: "2025-01-01 10:35:00",
-      },
-      {
-        supermarket_id: 3,
-        name: "Whole Milk (1 Liter)",
-        price: 1.29,
-        created_at: "2025-01-01 10:35:00",
-      },
-      {
-        supermarket_id: 3,
-        name: "Whole Milk (1 Liter)",
-        price: 1.39,
-        created_at: "2025-02-01 10:35:00",
-      },
-      {
-        supermarket_id: 3,
-        name: "Whole Milk (1 Liter)",
-        price: 1.49,
-        created_at: "2025-03-01 10:35:00",
-      },
-      {
-        supermarket_id: 3,
-        name: "Whole Milk (1 Liter)",
-        price: 1.59,
-        created_at: "2025-04-01 10:35:00",
+        created_at: "2025-02-01T08:45:00",
       },
     ],
     product_info: {
@@ -331,222 +151,34 @@ export const MOCK_PRODUCT_DETAILS: Record<string, ProductDetailResult> = {
     price_changes: [
       {
         supermarket_id: 1,
-        price: 1.49,
-        pct_change: 0.07,
-      },
-      {
-        supermarket_id: 2,
-        price: 1.39,
-        pct_change: 0.08,
-      },
-      {
-        supermarket_id: 3,
-        price: 1.59,
-        pct_change: 0.07,
-      },
-      {
-        supermarket_id: 4,
-        price: 1.29,
-        pct_change: 0.0,
-      },
-      {
-        supermarket_id: 5,
-        price: 1.45,
-        pct_change: -0.03,
-      },
-    ],
-  },
-  "FRUIT-BAN-1KG": {
-    history: [
-      {
-        supermarket_id: 1,
-        name: "Bananas (1kg)",
-        price: 1.29,
-        created_at: "2025-01-01 08:20:00",
-      },
-      {
-        supermarket_id: 1,
-        name: "Bananas (1kg)",
-        price: 1.39,
-        created_at: "2025-02-01 08:20:00",
-      },
-      {
-        supermarket_id: 1,
-        name: "Bananas (1kg)",
-        price: 1.49,
-        created_at: "2025-03-01 08:20:00",
-      },
-      {
-        supermarket_id: 1,
-        name: "Bananas (1kg)",
-        price: 1.59,
-        created_at: "2025-04-01 08:20:00",
-      },
-      {
-        supermarket_id: 2,
-        name: "Bananas (1kg)",
         price: 1.19,
-        created_at: "2025-01-01 09:30:00",
+        pct_change: 8.4,
       },
       {
         supermarket_id: 2,
-        name: "Bananas (1kg)",
         price: 1.29,
-        created_at: "2025-02-01 09:30:00",
-      },
-      {
-        supermarket_id: 2,
-        name: "Bananas (1kg)",
-        price: 1.39,
-        created_at: "2025-03-01 09:30:00",
-      },
-      {
-        supermarket_id: 2,
-        name: "Bananas (1kg)",
-        price: 1.49,
-        created_at: "2025-04-01 09:30:00",
-      },
-    ],
-    product_info: {
-      name: "Bananas (1kg)",
-      sku: "FRUIT-BAN-1KG",
-    },
-    price_changes: [
-      {
-        supermarket_id: 1,
-        price: 1.59,
-        pct_change: 0.07,
-      },
-      {
-        supermarket_id: 2,
-        price: 1.49,
-        pct_change: 0.07,
-      },
-      {
-        supermarket_id: 3,
-        price: 1.69,
-        pct_change: 0.06,
-      },
-      {
-        supermarket_id: 4,
-        price: 1.39,
-        pct_change: 0.0,
-      },
-      {
-        supermarket_id: 5,
-        price: 1.55,
-        pct_change: -0.03,
-      },
-    ],
-  },
-  "MILK-1GAL-WHL": {
-    history: [
-      {
-        supermarket_id: 1,
-        name: "Whole Milk (1 Gallon)",
-        price: 3.29,
-        created_at: "2025-01-01 08:05:00",
-      },
-      {
-        supermarket_id: 1,
-        name: "Whole Milk (1 Gallon)",
-        price: 3.39,
-        created_at: "2025-02-01 08:05:00",
-      },
-      {
-        supermarket_id: 1,
-        name: "Whole Milk (1 Gallon)",
-        price: 3.39,
-        created_at: "2025-03-01 08:05:00",
-      },
-      {
-        supermarket_id: 1,
-        name: "Whole Milk (1 Gallon)",
-        price: 3.49,
-        created_at: "2025-04-01 08:05:00",
-      },
-      {
-        supermarket_id: 2,
-        name: "Whole Milk (1 Gallon)",
-        price: 3.19,
-        created_at: "2025-01-01 09:15:00",
-      },
-      {
-        supermarket_id: 2,
-        name: "Whole Milk (1 Gallon)",
-        price: 3.19,
-        created_at: "2025-02-01 09:15:00",
-      },
-      {
-        supermarket_id: 2,
-        name: "Whole Milk (1 Gallon)",
-        price: 3.29,
-        created_at: "2025-03-01 09:15:00",
-      },
-      {
-        supermarket_id: 2,
-        name: "Whole Milk (1 Gallon)",
-        price: 3.29,
-        created_at: "2025-04-01 09:15:00",
-      },
-    ],
-    product_info: {
-      name: "Whole Milk (1 Gallon)",
-      sku: "MILK-1GAL-WHL",
-    },
-    price_changes: [
-      {
-        supermarket_id: 1,
-        price: 3.49,
-        pct_change: 0.1,
-      },
-      {
-        supermarket_id: 2,
-        price: 3.29,
-        pct_change: 0.0,
-      },
-      {
-        supermarket_id: 3,
-        price: 3.59,
-        pct_change: 0.1,
-      },
-      {
-        supermarket_id: 4,
-        price: 3.19,
-        pct_change: 0.0,
-      },
-      {
-        supermarket_id: 5,
-        price: 3.39,
-        pct_change: -0.1,
+        pct_change: 7.8,
       },
     ],
   },
 }
 
-// Mock price comparison result
-export const MOCK_PRICE_COMPARISON: PriceComparisonResult = {
+// Mock price comparison
+export const MOCK_PRICE_COMPARISON = {
   optimal: [
     {
       supermarket_id: 4,
       name: "White Bread (500g)",
       sku: "BREAD-WHT-500G",
       price: 1.49,
-      created_at: "2025-04-01 09:35:00",
+      created_at: "2025-02-01T09:35:00",
     },
     {
       supermarket_id: 4,
       name: "Eggs (Dozen)",
       sku: "EGGS-LRG-12CT",
       price: 3.09,
-      created_at: "2025-04-01 09:40:00",
-    },
-    {
-      supermarket_id: 4,
-      name: "Whole Milk (1 Liter)",
-      sku: "MILK-1L-WHL",
-      price: 1.29,
-      created_at: "2025-04-01 09:45:00",
+      created_at: "2025-02-01T09:40:00",
     },
   ],
   best: [
@@ -554,22 +186,15 @@ export const MOCK_PRICE_COMPARISON: PriceComparisonResult = {
       supermarket_id: 4,
       name: "White Bread (500g)",
       sku: "BREAD-WHT-500G",
-      price: 1.59,
-      created_at: "2025-04-01 09:35:00",
+      price: 1.49,
+      created_at: "2025-02-01T09:35:00",
     },
     {
       supermarket_id: 4,
       name: "Eggs (Dozen)",
       sku: "EGGS-LRG-12CT",
-      price: 3.29,
-      created_at: "2025-04-01 09:40:00",
-    },
-    {
-      supermarket_id: 4,
-      name: "Whole Milk (1 Liter)",
-      sku: "MILK-1L-WHL",
-      price: 1.29,
-      created_at: "2025-04-01 09:45:00",
+      price: 3.09,
+      created_at: "2025-02-01T09:40:00",
     },
   ],
   median: [
@@ -577,51 +202,37 @@ export const MOCK_PRICE_COMPARISON: PriceComparisonResult = {
       supermarket_id: 5,
       name: "White Bread (500g)",
       sku: "BREAD-WHT-500G",
-      price: 1.75,
-      created_at: "2025-04-01 10:05:00",
+      price: 1.65,
+      created_at: "2025-02-01T10:05:00",
     },
     {
       supermarket_id: 5,
       name: "Eggs (Dozen)",
       sku: "EGGS-LRG-12CT",
-      price: 3.45,
-      created_at: "2025-04-01 10:10:00",
-    },
-    {
-      supermarket_id: 5,
-      name: "Whole Milk (1 Liter)",
-      sku: "MILK-1L-WHL",
-      price: 1.45,
-      created_at: "2025-04-01 10:15:00",
+      price: 3.25,
+      created_at: "2025-02-01T10:10:00",
     },
   ],
   worst: [
     {
-      supermarket_id: 3,
+      supermarket_id: 6,
       name: "White Bread (500g)",
       sku: "BREAD-WHT-500G",
-      price: 1.89,
-      created_at: "2025-04-01 10:35:00",
+      price: 1.79,
+      created_at: "2025-02-01T10:35:00",
     },
     {
-      supermarket_id: 3,
+      supermarket_id: 6,
       name: "Eggs (Dozen)",
       sku: "EGGS-LRG-12CT",
-      price: 3.59,
-      created_at: "2025-04-01 10:40:00",
-    },
-    {
-      supermarket_id: 3,
-      name: "Whole Milk (1 Liter)",
-      sku: "MILK-1L-WHL",
-      price: 1.59,
-      created_at: "2025-04-01 10:45:00",
+      price: 3.49,
+      created_at: "2025-02-01T10:40:00",
     },
   ],
 }
 
-// Mock inflation result
-export const MOCK_INFLATION: InflationResult = {
+// Mock inflation data
+export const MOCK_INFLATION = {
   global_inflation: {
     mean_inflation: {
       start_price: 2.37,
@@ -656,5 +267,8 @@ export const MOCK_INFLATION: InflationResult = {
   ],
 }
 
-// Import the types needed for the mock data
-import type { ProductListResult, ProductDetailResult, PriceComparisonResult, InflationResult } from "@/lib/api/api"
+// Mock date range for inflation calculator
+export const MOCK_DATE_RANGE = {
+  start_date: "2025-01-01",
+  end_date: "2025-04-09",
+}

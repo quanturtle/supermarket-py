@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect, useCallback } from "react"
-import { API, type InflationResult, type ProductListResult } from "@/lib/api/api"
+import { API, type InflationResult, type ProductListResult, type DateRangeResult } from "@/lib/api/api"
 import { toast } from "@/hooks/use-toast"
 
 // Import our modular components
@@ -9,36 +9,53 @@ import { ProductSelection } from "@/components/inflation/product-selection"
 import { DateSelection } from "@/components/inflation/date-selection"
 import { InflationResults } from "@/components/inflation/inflation-results"
 
-// Function to get available dates in yyyy-mm-dd format
-function getAvailableDates(): string[] {
-  return ["2025-01-01", "2025-02-01", "2025-03-01", "2025-04-01"]
-}
-
 export default function InflationCalculatorPage() {
   const [products, setProducts] = useState<ProductListResult[]>([])
   const [loading, setLoading] = useState(true)
   const [calculating, setCalculating] = useState(false)
   const [selectedProducts, setSelectedProducts] = useState<string[]>([])
 
-  // Get available dates and set initial values
-  const availableDates = getAvailableDates()
-  const [startDate, setStartDate] = useState(availableDates[0])
-  const [endDate, setEndDate] = useState(availableDates[availableDates.length - 1])
+  // Date range state
+  const [dateRange, setDateRange] = useState<DateRangeResult | null>(null)
+  const [startDate, setStartDate] = useState<string>("")
+  const [endDate, setEndDate] = useState<string>("")
+  const [availableDates, setAvailableDates] = useState<string[]>([])
 
   const [inflationResults, setInflationResults] = useState<InflationResult | null>(null)
 
-  // Load products on component mount
+  // Load products and date range on component mount
   useEffect(() => {
-    async function loadProducts() {
+    async function loadInitialData() {
       try {
         setLoading(true)
-        const allProducts = await API.getAllProducts()
-        setProducts(allProducts)
+
+        // Load products and date range in parallel
+        const [productsData, dateRangeData] = await Promise.all([API.getAllProducts(), API.getInflationDateRange()])
+
+        setProducts(productsData)
+        setDateRange(dateRangeData)
+
+        // Generate available dates between start_date and end_date
+        if (dateRangeData) {
+          const start = new Date(dateRangeData.start_date)
+          const end = new Date(dateRangeData.end_date)
+          const dates: string[] = []
+
+          const currentDate = new Date(start)
+          while (currentDate <= end) {
+            dates.push(currentDate.toISOString().split("T")[0])
+            currentDate.setDate(currentDate.getDate() + 1)
+          }
+
+          setAvailableDates(dates)
+          setStartDate(dateRangeData.start_date)
+          setEndDate(dateRangeData.end_date)
+        }
       } catch (error) {
-        console.error("Error loading products:", error)
+        console.error("Error loading initial data:", error)
         toast({
-          title: "Error loading products",
-          description: "Could not load product data. Please try again later.",
+          title: "Error loading data",
+          description: "Could not load product data or date range. Please try again later.",
           variant: "destructive",
         })
       } finally {
@@ -46,7 +63,7 @@ export default function InflationCalculatorPage() {
       }
     }
 
-    loadProducts()
+    loadInitialData()
   }, [])
 
   // Handle product selection toggle
@@ -93,7 +110,7 @@ export default function InflationCalculatorPage() {
   if (loading) {
     return (
       <div className="container flex items-center justify-center min-h-screen">
-        <p>Loading products...</p>
+        <p>Loading products and date range...</p>
       </div>
     )
   }

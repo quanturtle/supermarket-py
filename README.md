@@ -7,6 +7,17 @@ A project that scrapes data from paraguayan supermarkets.
 * DB (`postgres`)
 * Pipeline (`mage.ai`)
 
+## Screenshots
+
+![](./img/home.png)
+
+![](./img/catalog.png)
+
+![](./img/inflation.png)
+
+![](./img/cart.png)
+
+
 ## Install
 Make sure `run_app.sh` is executable:
 ```sh

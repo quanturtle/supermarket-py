@@ -55,7 +55,7 @@ export function PriceComparisonGrid({ comparisons, products, cart }: PriceCompar
             <CardTitle className="text-purple-800 text-lg flex items-center justify-between">
               <span>Optimal Combination</span>
             </CardTitle>
-            <CardDescription className="text-purple-700">Total: ${optimalTotalPrice}</CardDescription>
+            <CardDescription className="text-purple-700">Total: ${optimalTotalPrice.toFixed(2)}</CardDescription>
           </CardHeader>
           <CardContent className="pt-3 flex-1 overflow-auto">
             <div className="h-[300px] overflow-auto">
@@ -105,7 +105,7 @@ export function PriceComparisonGrid({ comparisons, products, cart }: PriceCompar
         <Card className="border-green-200 flex flex-col h-full">
           <CardHeader className="bg-green-50 border-b border-green-100 pb-3">
             <CardTitle className="text-green-800 text-lg">Best: Supermarket {best[0]?.supermarket_id}</CardTitle>
-            <CardDescription className="text-green-700">Total: ${bestTotalPrice}</CardDescription>
+            <CardDescription className="text-green-700">Total: ${bestTotalPrice.toFixed(2)}</CardDescription>
           </CardHeader>
           <CardContent className="pt-3 flex-1 overflow-auto">
             <div className="h-[300px] overflow-auto">
@@ -155,7 +155,7 @@ export function PriceComparisonGrid({ comparisons, products, cart }: PriceCompar
         <Card className="flex flex-col h-full">
           <CardHeader className="pb-3 border-b">
             <CardTitle className="text-lg">Median: Supermarket {median[0]?.supermarket_id}</CardTitle>
-            <CardDescription>Total: ${medianTotalPrice}</CardDescription>
+            <CardDescription>Total: ${medianTotalPrice.toFixed(2)}</CardDescription>
           </CardHeader>
           <CardContent className="pt-3 flex-1 overflow-auto">
             <div className="h-[300px] overflow-auto">
@@ -205,7 +205,7 @@ export function PriceComparisonGrid({ comparisons, products, cart }: PriceCompar
         <Card className="border-red-200 flex flex-col h-full">
           <CardHeader className="bg-red-50 border-b border-red-100 pb-3">
             <CardTitle className="text-red-800 text-lg">Worst: Supermarket {worst[0]?.supermarket_id}</CardTitle>
-            <CardDescription className="text-red-700">Total: ${worstTotalPrice}</CardDescription>
+            <CardDescription className="text-red-700">Total: ${worstTotalPrice.toFixed(2)}</CardDescription>
           </CardHeader>
           <CardContent className="pt-3 flex-1 overflow-auto">
             <div className="h-[300px] overflow-auto">

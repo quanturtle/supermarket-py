@@ -26,8 +26,10 @@ chmod +x run_app.sh
 
 Use [`neon`](https://neon.tech/) as a `postgres` database. Create an account and use connection string:
 ```
-postgresql://my_user:my_password@***-pooler.us-east-2.aws.neon.tech/my_database?sslmode=require
+postgresql://my_user:my_password@***-***.us-east-2.aws.neon.tech/my_database?sslmode=require
 ```
+
+Deploy frontend to [`vercel`](http://vercel.com/) and get `FRONTEND_URL`.
 
 Modify `.env` file:
 ```

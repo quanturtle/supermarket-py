@@ -22,12 +22,12 @@ else:
         'https://localhost:8000'
     ]
 
+
 app = FastAPI(
     title='supermarket-py-backend',
     description='API for comparing prices of products across different supermarkets',
     version='1.0.0',
 )
-
 
 app.add_middleware(
     CORSMiddleware,

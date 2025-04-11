@@ -13,6 +13,8 @@ mage-ai.db
 mage_data/
 secrets/
 .env
+.env.dev
+.env.prod
 .venv
 my-project/.operation_history
 my-project/.cache

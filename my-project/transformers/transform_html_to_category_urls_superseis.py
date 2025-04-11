@@ -1,5 +1,6 @@
 import pandas as pd
 import requests as r
+from datetime import datetime
 from bs4 import BeautifulSoup
 
 if 'transformer' not in globals():
@@ -10,10 +11,10 @@ if 'test' not in globals():
 
 @transformer
 def transform(data, *args, **kwargs):
-    response = r.get(data['categories_container_url'].values[0])
+    response = r.get(data['category_urls_container_url'].values[0])
     soup = BeautifulSoup(response.text, 'html.parser')
     
-    matching_div = soup.find('div', class_=data['categories_container'].values[0])
+    matching_div = soup.find('div', class_=data['category_urls_container_class'].values[0])
 
     if matching_div is None:
         raise "div not found error"
@@ -28,7 +29,8 @@ def transform(data, *args, **kwargs):
                 link_info = {
                     'supermarket_id': data['id'].values[0],
                     'description': link.get_text(strip=True),
-                    'url': link['href'], 
+                    'url': link['href'],
+                    'created_at': datetime.now()
                 }
         
                 results.append(link_info)

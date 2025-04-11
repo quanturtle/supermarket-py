@@ -51,8 +51,10 @@ PIPELINE_PORT='6789'
 Build and run with `docker`:
 ```sh
 # local development
-docker compose -f docker-compose-dev.yaml build && docker compose -f docker-compose-dev.yaml up
+docker compose --env-file .env.dev -f docker-compose-dev.yaml build && docker compose -f docker-compose-dev.yaml up
+```
 
+```sh
 # production deployment
-docker compose -f docker-compose-prod.yaml build && docker compose -f docker-compose-prod.yaml up
+docker compose --env-file .env.prod -f docker-compose-prod.yaml build && docker compose -f docker-compose-prod.yaml up
 ```

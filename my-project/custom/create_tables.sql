@@ -10,6 +10,7 @@ CREATE TABLE IF NOT EXISTS supermarkets (
 CREATE TABLE IF NOT EXISTS category_urls (
     id SERIAL PRIMARY KEY,
     supermarket_id integer REFERENCES supermarkets (id),
+    description VARCHAR,
     url VARCHAR,
     created_at TIMESTAMP
 );

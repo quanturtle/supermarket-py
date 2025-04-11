@@ -17,7 +17,7 @@ blocks:
   language: sql
   name: extract_urls_superseis
   retry_config: null
-  status: updated
+  status: executed
   timeout: null
   type: data_loader
   upstream_blocks: []

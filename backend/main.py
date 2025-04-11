@@ -5,7 +5,7 @@ import uvicorn
 import pandas as pd
 from sqlmodel import Session, select, or_
 from sqlalchemy import func, desc, over
-from fastapi import FastAPI, Depends, HTTPException
+from fastapi import FastAPI, Depends, status
 from fastapi.middleware.cors import CORSMiddleware
 from models import Product, get_session
 
@@ -18,7 +18,8 @@ app = FastAPI(
 
 
 origins = [
-    "http://localhost:3000",
+    'http://localhost:3000',
+    '*'
 ]
 
 app.add_middleware(
@@ -27,6 +28,11 @@ app.add_middleware(
     allow_methods=['GET', 'POST'],
     allow_headers=['*'],
 )
+
+
+@app.get('/health', status_code=status.HTTP_200_OK)
+async def get_catalog(session: Session = Depends(get_session)):
+    return {'status': 'ok'}
 
 
 @app.get('/catalog')

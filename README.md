@@ -38,6 +38,7 @@ POSTGRES_PORT='5432'
 POSTGRES_DB='supermarket'
 
 BACKEND_PORT='8000'
+FRONTEND_URL='something.com'
 
 MAGE_DATA_DIR='/app'
 LOCAL_MAGE_DATA_DIR='/home/user/your/directory'
@@ -47,5 +48,9 @@ PIPELINE_PORT='6789'
 
 Build and run with `docker`:
 ```sh
-docker compose build && docker compose up
+# local development
+docker compose -f docker-compose-dev.yaml build && docker compose -f docker-compose-dev.yaml up
+
+# production deployment
+docker compose -f docker-compose-prod.yaml build && docker compose -f docker-compose-prod.yaml up
 ```

@@ -11,24 +11,28 @@ from fastapi.middleware.cors import CORSMiddleware
 from models import Product, get_session
 
 
+if os.getenv('IS_PROD') == 'True':
+    origins = [
+        os.getenv('FRONTEND_URL')
+    ]
+
+else:
+    origins = [
+        'http://localhost:8000',
+        'https://localhost:8000'
+    ]
+
 app = FastAPI(
     title='supermarket-py-backend',
     description='API for comparing prices of products across different supermarkets',
     version='1.0.0',
 )
 
-if os.getenv('IS_PROD', 'True') == 'True':
-    origins = [
-        os.getenv('FRONTEND_URL')
-    ]
-else:
-    origins = [
-        '*'
-    ]
 
 app.add_middleware(
     CORSMiddleware,
     allow_origins=origins,
+    allow_credentials=True,
     allow_methods=['GET', 'POST'],
     allow_headers=['*'],
 )

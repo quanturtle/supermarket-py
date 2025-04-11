@@ -1,6 +1,7 @@
 from typing import List, Dict, Any, Optional, Tuple
 from datetime import datetime, timedelta
 
+import os
 import uvicorn
 import pandas as pd
 from sqlmodel import Session, select, or_
@@ -16,11 +17,14 @@ app = FastAPI(
     version='1.0.0',
 )
 
-
-origins = [
-    'http://localhost:3000',
-    '*'
-]
+if os.getenv('IS_PROD', 'True') == 'True':
+    origins = [
+        os.getenv('FRONTEND_URL')
+    ]
+else:
+    origins = [
+        '*'
+    ]
 
 app.add_middleware(
     CORSMiddleware,

@@ -1,6 +1,7 @@
 from os import path
+from pprint import pprint
 from typing import List, Dict
-from pandas import DataFrame
+import pandas as pd
 from mage_ai.settings.repo import get_repo_path
 from mage_ai.io.config import ConfigFileLoader
 from mage_ai.io.postgres import Postgres
@@ -26,19 +27,26 @@ def export_data_to_postgres(data: List[Dict], **kwargs) -> None:
     
     for category in data:
         try:
-            print(category['product_links'])
-        except:
-            print(category)
-        # result.append(category['product_links'])
-    
-    # df = pd.DataFrame(result)
-    # print(df)
+            for product_links in category['product_links']:
+                result.append(product_links)
 
-    # with Postgres.with_config(ConfigFileLoader(config_path, config_profile)) as loader:
-    #     loader.export(
-    #         df,
-    #         schema_name,
-    #         table_name,
-    #         index=False,  # Specifies whether to include index in exported table
-    #         if_exists='replace',  # Specify resolution policy if table name already exists
-    #     )
+        except:
+            continue
+    
+    # clean dataframe from duplicates before inserting, drop links without description
+    df = pd.DataFrame(result)
+    df = df.dropna(subset=['description'])
+
+    unique_descriptions = df['description'].unique()
+    unique_urls = df['url'].unique()
+
+    df = df.drop_duplicates(subset=['description', 'url'])
+    
+    with Postgres.with_config(ConfigFileLoader(config_path, config_profile)) as loader:
+        loader.export(
+            df,
+            schema_name,
+            table_name,
+            index=False,  # Specifies whether to include index in exported table
+            if_exists='replace',  # Specify resolution policy if table name already exists
+        )

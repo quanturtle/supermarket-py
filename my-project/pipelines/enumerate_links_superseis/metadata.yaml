@@ -91,38 +91,38 @@ blocks:
       path: transformers/reduce_category_urls_to_product_urls_superseis.py
     reduce_output: true
   downstream_blocks:
-  - load_product_urls
+  - load_product_urls_superseis
   executor_config: null
   executor_type: local_python
   has_callback: false
   language: python
   name: reduce_category_urls_to_product_urls_superseis
   retry_config: null
-  status: executed
+  status: updated
   timeout: null
   type: transformer
   upstream_blocks:
   - fan_category_urls
   uuid: reduce_category_urls_to_product_urls_superseis
-- all_upstream_blocks_executed: true
+- all_upstream_blocks_executed: false
   color: null
   configuration:
-    file_path: data_exporters/load_product_urls.py
+    file_path: data_exporters/load_product_urls_superseis.py
     file_source:
-      path: data_exporters/load_product_urls.py
+      path: data_exporters/load_product_urls_superseis.py
   downstream_blocks: []
   executor_config: null
   executor_type: local_python
   has_callback: false
   language: python
-  name: load_product_urls
+  name: load_product_urls_superseis
   retry_config: null
-  status: executed
+  status: updated
   timeout: null
   type: data_exporter
   upstream_blocks:
   - reduce_category_urls_to_product_urls_superseis
-  uuid: load_product_urls
+  uuid: load_product_urls_superseis
 cache_block_output_in_memory: false
 callbacks: []
 concurrency_config: {}

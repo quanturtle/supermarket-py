@@ -19,7 +19,7 @@ def transform(data: Dict, *args, **kwargs) -> List[Dict]:
     results = []
 
     while queue:
-        time.sleep(1)
+        time.sleep(0.5)
         url = queue.popleft()
 		
         response = r.get(url)

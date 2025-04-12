@@ -1,0 +1,43 @@
+blocks:
+- all_upstream_blocks_executed: true
+  color: blue
+  configuration:
+    file_path: custom/piperunner.py
+    file_source:
+      path: custom/piperunner.py
+  downstream_blocks: []
+  executor_config: null
+  executor_type: local_python
+  has_callback: false
+  language: python
+  name: piperunner
+  retry_config: null
+  status: executed
+  timeout: null
+  type: custom
+  upstream_blocks: []
+  uuid: piperunner
+cache_block_output_in_memory: false
+callbacks: []
+concurrency_config: {}
+conditionals: []
+created_at: '2025-04-12 16:13:08.053030+00:00'
+data_integration: null
+description: null
+executor_config: {}
+executor_count: 1
+executor_type: null
+extensions: {}
+name: metapipe
+notification_config: {}
+remote_variables_dir: null
+retry_config: {}
+run_pipeline_in_one_process: false
+settings:
+  triggers: null
+spark_config: {}
+tags: []
+type: python
+uuid: metapipe
+variables_dir: /app/my-project
+widgets: []

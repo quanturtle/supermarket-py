@@ -49,12 +49,16 @@ PIPELINE_PORT='6789'
 ```
 
 Build and run with `docker`:
+> [!NOTE]  
+> Make sure to have the correct `.env` file when running docker compose
+> `docker compose -env_file ./env.dev -f [...]` won't work because it won't perform substitution at compose time
+
 ```sh
 # local development
-docker compose --env-file .env.dev -f docker-compose-dev.yaml build && docker compose -f docker-compose-dev.yaml up
+docker compose -f docker-compose-dev.yaml build && docker compose -f docker-compose-dev.yaml up
 ```
 
 ```sh
 # production deployment
-docker compose --env-file .env.prod -f docker-compose-prod.yaml build && docker compose -f docker-compose-prod.yaml up
+docker compose -f docker-compose-prod.yaml build && docker compose -f docker-compose-prod.yaml up
 ```

@@ -117,7 +117,7 @@ blocks:
   language: python
   name: load_product_urls
   retry_config: null
-  status: updated
+  status: executed
   timeout: null
   type: data_exporter
   upstream_blocks:

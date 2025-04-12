@@ -3,7 +3,6 @@ CREATE TABLE IF NOT EXISTS supermarkets (
     "name" VARCHAR,
     home_url VARCHAR,
     category_urls_container_url VARCHAR,
-    category_urls_container_class VARCHAR,
     api_url VARCHAR
 );
 

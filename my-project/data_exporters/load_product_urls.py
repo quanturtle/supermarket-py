@@ -22,13 +22,23 @@ def export_data_to_postgres(data: List[Dict], **kwargs) -> None:
     config_path = path.join(get_repo_path(), 'io_config.yaml')
     config_profile = 'default'
 
-    df = pd.DataFrame(data)
+    result = []
+    
+    for category in data:
+        try:
+            print(category['product_links'])
+        except:
+            print(category)
+        # result.append(category['product_links'])
+    
+    # df = pd.DataFrame(result)
+    # print(df)
 
-    with Postgres.with_config(ConfigFileLoader(config_path, config_profile)) as loader:
-        loader.export(
-            df,
-            schema_name,
-            table_name,
-            index=False,  # Specifies whether to include index in exported table
-            if_exists='replace',  # Specify resolution policy if table name already exists
-        )
+    # with Postgres.with_config(ConfigFileLoader(config_path, config_profile)) as loader:
+    #     loader.export(
+    #         df,
+    #         schema_name,
+    #         table_name,
+    #         index=False,  # Specifies whether to include index in exported table
+    #         if_exists='replace',  # Specify resolution policy if table name already exists
+    #     )

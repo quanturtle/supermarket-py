@@ -1,3 +1,4 @@
+import pandas as pd
 from typing import List, Dict
 
 if 'transformer' not in globals():
@@ -8,17 +9,15 @@ if 'test' not in globals():
 
 @transformer
 def transform(data, *args, **kwargs) -> List[List[Dict]]:
-    # take in dataframe of category_urls and create list[dict]
-    users = []
+    category_urls = []
     metadata = []
 
-    for i in range(3):
-        i += 1
-        users.append(dict(id=i, name=f'user_{i}'))
-        metadata.append(dict(block_uuid=f'for_user_{i}'))
+    for idx, row in data.iterrows():
+        category_urls.append(dict(id=idx, url=row['url'], supermarket_id=row['supermarket_id']))
+        metadata.append(dict(block_uuid=f'for_url_{idx}'))
 
     return [
-        users,
+        category_urls,
         metadata,
     ]
 

@@ -13,27 +13,21 @@ if 'test' not in globals():
 def transform(data, *args, **kwargs):
     response = r.get(data['category_urls_container_url'].values[0])
     soup = BeautifulSoup(response.text, 'html.parser')
-    
-    matching_div = soup.find('div', class_=data['category_urls_container_class'].values[0])
 
-    if matching_div is None:
-        raise "div not found error"
+    links = soup.find_all('a', href=True)
     
-    else:
-        results = []
-
-        links = matching_div.find_all('a', href=True)
-        
-        for link in links:
-            if link['href'] != '#':
-                link_info = {
-                    'supermarket_id': data['id'].values[0],
-                    'description': link.get_text(strip=True),
-                    'url': link['href'],
-                    'created_at': datetime.now()
-                }
-        
-                results.append(link_info)
+    results = []
+    
+    for link in links:
+        if link['href'] != '#' and 'category' in link['href']:
+            link_info = {
+                'supermarket_id': data['id'].values[0],
+                'description': link.get_text(strip=True),
+                'url': link['href'],
+                'created_at': datetime.now()
+            }
+    
+            results.append(link_info)
     
     return pd.DataFrame(results)
 

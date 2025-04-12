@@ -33,7 +33,7 @@ blocks:
       path: transformers/transform_html_to_category_urls_superseis.py
   downstream_blocks:
   - load_category_urls_superseis
-  - fan_category_urls
+  - fan_category_urls_superseis
   executor_config: null
   executor_type: local_python
   has_callback: false
@@ -66,23 +66,23 @@ blocks:
   color: null
   configuration:
     dynamic: true
-    file_path: transformers/fan_category_urls.py
+    file_path: transformers/fan_category_urls_superseis.py
     file_source:
-      path: transformers/fan_category_urls.py
+      path: transformers/fan_category_urls_superseis.py
   downstream_blocks:
   - reduce_category_urls_to_product_urls_superseis
   executor_config: null
   executor_type: local_python
   has_callback: false
   language: python
-  name: fan_category_urls
+  name: fan_category_urls_superseis
   retry_config: null
   status: executed
   timeout: null
   type: transformer
   upstream_blocks:
   - transform_html_to_category_urls_superseis
-  uuid: fan_category_urls
+  uuid: fan_category_urls_superseis
 - all_upstream_blocks_executed: true
   color: null
   configuration:
@@ -102,7 +102,7 @@ blocks:
   timeout: null
   type: transformer
   upstream_blocks:
-  - fan_category_urls
+  - fan_category_urls_superseis
   uuid: reduce_category_urls_to_product_urls_superseis
 - all_upstream_blocks_executed: false
   color: null

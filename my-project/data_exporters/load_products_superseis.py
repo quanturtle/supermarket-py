@@ -1,6 +1,6 @@
 from os import path
 from typing import List, Dict
-from pandas import DataFrame
+import pandas as pd
 from mage_ai.settings.repo import get_repo_path
 from mage_ai.io.config import ConfigFileLoader
 from mage_ai.io.postgres import Postgres
@@ -21,8 +21,9 @@ def export_data_to_postgres(data: List[Dict], **kwargs) -> None:
     table_name = 'products'  # Specify the name of the table to export data to
     config_path = path.join(get_repo_path(), 'io_config.yaml')
     config_profile = 'default'
-
-    df = pd.DataFrame(data)
+    
+    result = [product['product_info'] for product in data]
+    df = pd.DataFrame(result)
 
     with Postgres.with_config(ConfigFileLoader(config_path, config_profile)) as loader:
         loader.export(

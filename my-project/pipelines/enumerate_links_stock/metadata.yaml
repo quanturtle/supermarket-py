@@ -27,7 +27,7 @@ concurrency_config: {}
 conditionals: []
 created_at: '2025-04-08 15:39:11.699782+00:00'
 data_integration: null
-description: Extract from Stock
+description: Extract from URLs from Stock
 executor_config: {}
 executor_count: 1
 executor_type: null
@@ -41,7 +41,6 @@ settings:
   triggers: null
 spark_config: {}
 tags:
-- '1'
 - stock
 type: python
 uuid: enumerate_links_stock

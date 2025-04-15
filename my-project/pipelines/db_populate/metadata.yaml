@@ -71,8 +71,7 @@ settings:
   triggers: null
 spark_config: {}
 tags:
-- '2'
-- db
+- 1 - db
 type: python
 uuid: db_populate
 variables_dir: /app/my-project

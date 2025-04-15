@@ -1,0 +1,26 @@
+blocks: []
+cache_block_output_in_memory: false
+callbacks: []
+concurrency_config: {}
+conditionals: []
+created_at: '2025-04-15 13:44:40.939958+00:00'
+data_integration: null
+description: Extract product information from Biggie
+executor_config: {}
+executor_count: 1
+executor_type: null
+extensions: {}
+name: extract_products_biggie
+notification_config: {}
+remote_variables_dir: null
+retry_config: {}
+run_pipeline_in_one_process: false
+settings:
+  triggers: null
+spark_config: {}
+tags:
+- biggie
+type: python
+uuid: extract_products_biggie
+variables_dir: /app/my-project
+widgets: []

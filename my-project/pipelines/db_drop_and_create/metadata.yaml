@@ -67,8 +67,7 @@ settings:
   triggers: null
 spark_config: {}
 tags:
-- '3'
-- db
+- 1 - db
 type: python
 uuid: db_drop_and_create
 variables_dir: /app/my-project

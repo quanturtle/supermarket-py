@@ -107,7 +107,6 @@ settings:
 spark_config: {}
 tags:
 - superseis
-- '2'
 type: python
 uuid: extract_products_superseis
 variables_dir: /app/my-project

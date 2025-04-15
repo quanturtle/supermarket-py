@@ -10,37 +10,113 @@ blocks:
     limit: 1000
     use_raw_sql: true
   downstream_blocks:
-  - transform_html_to_category_urls_biggie
+  - transform_api_to_category_urls_biggie
   executor_config: null
   executor_type: local_python
   has_callback: false
   language: sql
   name: extract_urls_biggie
   retry_config: null
-  status: updated
+  status: executed
   timeout: null
   type: data_loader
   upstream_blocks: []
   uuid: extract_urls_biggie
-- all_upstream_blocks_executed: false
+- all_upstream_blocks_executed: true
   color: null
   configuration:
     data_provider: postgres
     data_provider_profile: default
     export_write_policy: append
+    file_path: transformers/transform_api_to_category_urls_biggie.py
+    file_source:
+      path: transformers/transform_api_to_category_urls_biggie.py
+  downstream_blocks:
+  - load_category_urls_biggie
+  - fan_category_urls_biggie
+  executor_config: null
+  executor_type: local_python
+  has_callback: false
+  language: python
+  name: transform_api_to_category_urls_biggie
+  retry_config: null
+  status: executed
+  timeout: null
+  type: transformer
+  upstream_blocks:
+  - extract_urls_biggie
+  uuid: transform_api_to_category_urls_biggie
+- all_upstream_blocks_executed: true
+  color: null
+  configuration: {}
   downstream_blocks: []
   executor_config: null
   executor_type: local_python
   has_callback: false
   language: python
-  name: transform_html_to_category_urls_biggie
+  name: load_category_urls_biggie
   retry_config: null
-  status: not_executed
+  status: executed
+  timeout: null
+  type: data_exporter
+  upstream_blocks:
+  - transform_api_to_category_urls_biggie
+  uuid: load_category_urls_biggie
+- all_upstream_blocks_executed: true
+  color: null
+  configuration:
+    dynamic: true
+  downstream_blocks:
+  - reduce_category_urls_to_product_urls_biggie
+  executor_config: null
+  executor_type: local_python
+  has_callback: false
+  language: python
+  name: fan_category_urls_biggie
+  retry_config: null
+  status: executed
   timeout: null
   type: transformer
   upstream_blocks:
-  - extract_urls_biggie
-  uuid: transform_html_to_category_urls_biggie
+  - transform_api_to_category_urls_biggie
+  uuid: fan_category_urls_biggie
+- all_upstream_blocks_executed: true
+  color: null
+  configuration:
+    reduce_output: true
+  downstream_blocks:
+  - load_product_urls_and_products_biggie
+  executor_config: null
+  executor_type: local_python
+  has_callback: false
+  language: python
+  name: reduce_category_urls_to_product_urls_biggie
+  retry_config: null
+  status: executed
+  timeout: null
+  type: transformer
+  upstream_blocks:
+  - fan_category_urls_biggie
+  uuid: reduce_category_urls_to_product_urls_biggie
+- all_upstream_blocks_executed: true
+  color: null
+  configuration:
+    file_path: data_exporters/load_product_urls_and_products_biggie.py
+    file_source:
+      path: data_exporters/load_product_urls_and_products_biggie.py
+  downstream_blocks: []
+  executor_config: null
+  executor_type: local_python
+  has_callback: false
+  language: python
+  name: load_product_urls_and_products_biggie
+  retry_config: null
+  status: executed
+  timeout: null
+  type: data_exporter
+  upstream_blocks:
+  - reduce_category_urls_to_product_urls_biggie
+  uuid: load_product_urls_and_products_biggie
 cache_block_output_in_memory: false
 callbacks: []
 concurrency_config: {}

@@ -23,28 +23,47 @@ def export_data_to_postgres(data: List[Dict], **kwargs) -> None:
     config_path = path.join(get_repo_path(), 'io_config.yaml')
     config_profile = 'default'
 
-    result = []
+    product_urls = []
+    products = []
     
     for category in data:
         try:
-            for product_links in category['product_links']:
-                result.append(product_links)
+            for product_url in category['product_urls']:
+                product_urls.append(product_url)
+            
+            for product in category['product_details']:
+                products.append(product)
 
         except:
             continue
     
-    # clean dataframe from duplicates before inserting, drop links without description
-    df = pd.DataFrame(result)
-    df = df.dropna(subset=['description'])
+    # insert product_urls
+    product_urls_df = pd.DataFrame(product_urls)
+    product_urls_df = product_urls_df.dropna(subset=['description'])
 
-    unique_descriptions = df['description'].unique()
-    unique_urls = df['url'].unique()
-
-    df = df.drop_duplicates(subset=['description', 'url'])
+    product_urls_df = product_urls_df.drop_duplicates(subset=['description', 'url'])
     
     with Postgres.with_config(ConfigFileLoader(config_path, config_profile)) as loader:
         loader.export(
-            df,
+            product_urls_df,
+            schema_name,
+            table_name,
+            index=False,  # Specifies whether to include index in exported table
+            if_exists='append',  # Specify resolution policy if table name already exists
+        )
+
+    # insert products
+    schema_name = 'public'  # Specify the name of the schema to export data to
+    table_name = 'products'  # Specify the name of the table to export data to
+    config_path = path.join(get_repo_path(), 'io_config.yaml')
+    config_profile = 'default'
+    
+    products_df = pd.DataFrame(products)
+    products_df = products_df.drop_duplicates(subset=['description', 'url'])
+
+    with Postgres.with_config(ConfigFileLoader(config_path, config_profile)) as loader:
+        loader.export(
+            products_df,
             schema_name,
             table_name,
             index=False,  # Specifies whether to include index in exported table

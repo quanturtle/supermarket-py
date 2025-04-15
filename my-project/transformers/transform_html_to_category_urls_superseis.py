@@ -1,5 +1,5 @@
 import pandas as pd
-import requests as r
+import requests
 from datetime import datetime
 from bs4 import BeautifulSoup
 
@@ -12,7 +12,7 @@ if 'test' not in globals():
 @transformer
 def transform(data, *args, **kwargs):
     category_urls_container_url = data['category_urls_container_url'].values[0]
-    response = r.get(category_urls_container_url)
+    response = requests.get(category_urls_container_url)
     
     soup = BeautifulSoup(response.text, 'html.parser')
 

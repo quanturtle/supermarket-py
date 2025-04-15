@@ -5,7 +5,7 @@ blocks:
     data_provider: postgres
     data_provider_profile: default
     dbt: {}
-    disable_query_preprocessing: true
+    disable_query_preprocessing: false
     export_write_policy: append
     limit: 1000
     use_raw_sql: true
@@ -80,7 +80,7 @@ blocks:
   language: python
   name: load_products_superseis
   retry_config: null
-  status: executed
+  status: updated
   timeout: null
   type: data_exporter
   upstream_blocks:

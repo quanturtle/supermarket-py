@@ -43,7 +43,7 @@ spark_config:
   # e.g. kwargs['context']['spark'] = spark_session
   custom_session_var_name: 'spark'
 
-help_improve_mage: true
+help_improve_mage: false
 notification_config:
   alert_on:
   - trigger_failure
@@ -53,3 +53,6 @@ notification_config:
   teams_config:
     webhook_url: "{{ env_var('MAGE_TEAMS_WEBHOOK_URL') }}"
 project_uuid: 29746f4930e74a92998f24478fb3c132
+features:
+  automatic_kernel_cleanup: true
+pipelines:

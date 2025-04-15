@@ -26,5 +26,6 @@ CREATE TABLE IF NOT EXISTS products (
     "name" VARCHAR,
     sku VARCHAR,
 	price DECIMAL,
+    url VARCHAR,
 	created_at TIMESTAMP
 );

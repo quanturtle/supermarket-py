@@ -62,3 +62,30 @@ docker compose -f docker-compose-dev.yaml build && docker compose -f docker-comp
 # production deployment
 docker compose -f docker-compose-prod.yaml build && docker compose -f docker-compose-prod.yaml up
 ```
+
+TODO:
+New URLs:
+* https://supermercadolabomba.com/index.php?class=Inicio
+* https://losjardinesonline.com.py/
+* https://www.supermas.com.py/
+* https://kingo.com.py/index.php?class=Inicio
+* https://www.fortis.com.py/
+* https://grutteronline.casagrutter.com.py/
+* https://www.salemmaonline.com.py/
+
+* Biggie
+    * Build category and product url extraction pipeline
+    * Build product extraction pipeline
+
+* Standarize URLs (https://www.supermas.com.py/)
+    * https://
+    * www.
+    * .com.py/
+
+* Add column to `supermarket` to hold another column: `pagination_container`
+    * Add next pagination url class/url selector
+
+* Standarize price extraction in case there is a discount and the new price shows up next to the old price
+
+* Make backup selection process (CSS selector vs class based selection)    
+    * Compare result of CSS selector and class based selector to make sure we got the correct data from the page

@@ -70,7 +70,9 @@ run_pipeline_in_one_process: false
 settings:
   triggers: null
 spark_config: {}
-tags: []
+tags:
+- '2'
+- db
 type: python
 uuid: db_populate
 variables_dir: /app/my-project

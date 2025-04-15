@@ -12,7 +12,7 @@ def transform_custom(*args, **kwargs):
         'extract_products_superseis',
         variables={
             'limit': '10',
-            'offset': '50'
+            'offset': '0'
         },
         check_status=False,
         error_on_failure=False,

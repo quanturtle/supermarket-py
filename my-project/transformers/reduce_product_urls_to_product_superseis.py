@@ -15,21 +15,56 @@ def transform(data: Dict, *args, **kwargs) -> List[Dict]:
     response = r.get(data['url'])
 
     soup = BeautifulSoup(response.text, 'html.parser')
+    product_details = soup.find('div', class_='product-details-info')
+    
+    if not product_details:
+        data['product_info'] = {
+            'supermarket_id': data['supermarket_id'],
+            'description': '',
+            'sku': '',
+            'price': '',
+            'url': data['url'],
+            'created_at': datetime.now()
+        }
 
-    # product
-    product_description = soup.select_one('h1.productname[itemprop="name"]').text.strip().upper()
+        return [data]
+
+    product_name_tag = 'h1'
+    product_name_class = 'productname'
+    product_name_attrs = {'itemprop': 'name'}
     
-    product_sku = soup.select_one('div.sku[itemprop="sku"]').text.strip()
-    product_sku = ''.join(filter(str.isdigit, product_sku))
-    
-    product_price_span = soup.select_one('span.productPrice').text.strip()
-    product_price = int(''.join(filter(str.isdigit, product_price_span)))
+    product_sku_tag = 'div'
+    product_sku_class = 'sku'
+    product_sku_attrs = {'itemprop': 'sku'}
+
+    product_price_tag = ['div', 'span']
+    product_price_class = ['price', 'productPrice']
+    product_price_attrs = [{'itemprop': 'price'}, '']
+
+    try:        
+        product_description = product_details.find(product_name_tag, class_=product_name_class, attrs=product_name_attrs).text.strip().upper()
+    except:
+        product_description = None
+
+    try:
+        product_sku = product_details.find(product_sku_tag, class_=product_sku_class, attrs=product_sku_attrs).text.strip()
+        product_sku = ''.join(filter(str.isdigit, product_sku))
+    except:
+        product_sku = None
+
+    try:
+        product_price_span = product_details.find(product_price_tag[0], class_=product_price_class[0], attrs=product_price_attrs[0]) \
+                                .find(product_price_tag[1], class_=product_price_class[0]).text.strip()
+        product_price = int(''.join(filter(str.isdigit, product_price_span)))
+    except:
+        product_price = None
     
     product_info = {
         'supermarket_id': data['supermarket_id'],
         'description': product_description,
         'sku': product_sku,
         'price': product_price,
+        'url': data['url'],
         'created_at': datetime.now()
     }
     

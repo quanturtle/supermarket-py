@@ -5,7 +5,7 @@ blocks:
     data_provider: postgres
     data_provider_profile: default
     dbt: {}
-    disable_query_preprocessing: false
+    disable_query_preprocessing: true
     export_write_policy: append
     limit: 1000
     use_raw_sql: true
@@ -17,7 +17,7 @@ blocks:
   language: sql
   name: extract_product_urls_superseis
   retry_config: null
-  status: updated
+  status: executed
   timeout: null
   type: data_loader
   upstream_blocks: []
@@ -105,7 +105,9 @@ run_pipeline_in_one_process: false
 settings:
   triggers: null
 spark_config: {}
-tags: []
+tags:
+- superseis
+- '2'
 type: python
 uuid: extract_products_superseis
 variables_dir: /app/my-project

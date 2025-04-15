@@ -10,6 +10,29 @@ blocks:
     limit: 1000
     use_raw_sql: true
   downstream_blocks:
+  - create_tables
+  executor_config: null
+  executor_type: local_python
+  has_callback: false
+  language: sql
+  name: create_schemas
+  retry_config: null
+  status: updated
+  timeout: null
+  type: custom
+  upstream_blocks: []
+  uuid: create_schemas
+- all_upstream_blocks_executed: false
+  color: pink
+  configuration:
+    data_provider: postgres
+    data_provider_profile: default
+    dbt: {}
+    disable_query_preprocessing: true
+    export_write_policy: append
+    limit: 1000
+    use_raw_sql: true
+  downstream_blocks:
   - create_hypertables
   executor_config: null
   executor_type: local_python
@@ -17,10 +40,11 @@ blocks:
   language: sql
   name: create_tables
   retry_config: null
-  status: executed
+  status: updated
   timeout: null
   type: custom
-  upstream_blocks: []
+  upstream_blocks:
+  - create_schemas
   uuid: create_tables
 - all_upstream_blocks_executed: false
   color: pink
@@ -66,7 +90,9 @@ run_pipeline_in_one_process: false
 settings:
   triggers: null
 spark_config: {}
-tags: []
+tags:
+- '1'
+- db
 type: python
 uuid: db_init
 variables_dir: /app/my-project

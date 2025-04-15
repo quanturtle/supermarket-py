@@ -40,7 +40,9 @@ run_pipeline_in_one_process: false
 settings:
   triggers: null
 spark_config: {}
-tags: []
+tags:
+- '1'
+- stock
 type: python
 uuid: enumerate_links_stock
 variables_dir: /app/my-project

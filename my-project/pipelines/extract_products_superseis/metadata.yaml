@@ -17,12 +17,12 @@ blocks:
   language: sql
   name: extract_product_urls_superseis
   retry_config: null
-  status: executed
+  status: updated
   timeout: null
   type: data_loader
   upstream_blocks: []
   uuid: extract_product_urls_superseis
-- all_upstream_blocks_executed: false
+- all_upstream_blocks_executed: true
   color: null
   configuration:
     data_provider: postgres
@@ -46,7 +46,7 @@ blocks:
   upstream_blocks:
   - extract_product_urls_superseis
   uuid: fan_product_urls_superseis
-- all_upstream_blocks_executed: false
+- all_upstream_blocks_executed: true
   color: null
   configuration:
     file_path: transformers/reduce_product_urls_to_product_superseis.py
@@ -61,13 +61,13 @@ blocks:
   language: python
   name: reduce_product_urls_to_product_superseis
   retry_config: null
-  status: updated
+  status: executed
   timeout: null
   type: transformer
   upstream_blocks:
   - fan_product_urls_superseis
   uuid: reduce_product_urls_to_product_superseis
-- all_upstream_blocks_executed: false
+- all_upstream_blocks_executed: true
   color: null
   configuration:
     file_path: data_exporters/load_products_superseis.py
@@ -80,7 +80,7 @@ blocks:
   language: python
   name: load_products_superseis
   retry_config: null
-  status: updated
+  status: executed
   timeout: null
   type: data_exporter
   upstream_blocks:

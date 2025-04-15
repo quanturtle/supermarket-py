@@ -54,7 +54,7 @@ def transform(data: Dict, *args, **kwargs) -> List[Dict]:
 
     try:
         product_price_span = product_details.find(product_price_tag[0], class_=product_price_class[0], attrs=product_price_attrs[0]) \
-                                .find(product_price_tag[1], class_=product_price_class[0]).text.strip()
+                                .find(product_price_tag[1], class_=product_price_class[1]).text.strip()
         product_price = int(''.join(filter(str.isdigit, product_price_span)))
     except:
         product_price = None

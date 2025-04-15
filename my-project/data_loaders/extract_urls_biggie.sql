@@ -1,1 +1,1 @@
-SELECT * FROM supermarkets where name like 'biggie';
+SELECT * FROM supermarkets where name LIKE 'biggie';

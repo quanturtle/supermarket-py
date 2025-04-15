@@ -29,8 +29,10 @@ def transform(data: Dict, *args, **kwargs) -> List[Dict]:
 
         links = soup.find_all('a', href=True)
 	
+        product_string_in_url = 'products'
+        pagination_string_in_url = 'pageindex'
         for link in links:
-            if (link['href'] != '#') and ('products' in link['href']):
+            if (link['href'] != '#') and (product_string_in_url in link['href']):
                 link_info = {
                     'supermarket_id': data['supermarket_id'],
                     'description': link.get_text(strip=True),
@@ -41,7 +43,7 @@ def transform(data: Dict, *args, **kwargs) -> List[Dict]:
                 results.append(link_info)
 
             else:
-                if ('pageindex' in link['href'].lower()) and (link['href'] not in visited_urls):
+                if (pagination_string_in_url in link['href'].lower()) and (link['href'] not in visited_urls):
                     queue.append(link['href'])
                     visited_urls.add(link['href'])
 

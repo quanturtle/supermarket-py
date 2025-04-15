@@ -11,15 +11,18 @@ if 'test' not in globals():
 
 @transformer
 def transform(data, *args, **kwargs):
-    response = r.get(data['category_urls_container_url'].values[0])
+    category_urls_container_url = data['category_urls_container_url'].values[0]
+    response = r.get(category_urls_container_url)
+    
     soup = BeautifulSoup(response.text, 'html.parser')
 
     links = soup.find_all('a', href=True)
     
     results = []
     
+    category_string_in_url = 'category'
     for link in links:
-        if link['href'] != '#' and 'category' in link['href']:
+        if link['href'] != '#' and category_string_in_url in link['href']:
             link_info = {
                 'supermarket_id': data['id'].values[0],
                 'description': link.get_text(strip=True),

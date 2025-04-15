@@ -15,7 +15,10 @@ def transform(data: Dict, *args, **kwargs) -> List[Dict]:
     response = r.get(data['url'])
 
     soup = BeautifulSoup(response.text, 'html.parser')
-    product_details = soup.find('div', class_='product-details-info')
+    
+    product_container_tag = 'div'
+    product_container_class = 'product-details-info'
+    product_details = soup.find(product_container_tag, class_=product_container_class)
     
     if not product_details:
         data['product_info'] = {

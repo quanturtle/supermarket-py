@@ -23,7 +23,7 @@ RUN chmod +x /app/run_app.sh
 # Install dependencies and clean up cache
 RUN set -ex && \
     pip install --upgrade pip && \
-    pip install -r /app/requirements.txt && \
+    pip install --no-cache-dir -r /app/requirements.txt && \
     rm -rf /root/.cache/
 
 # Copy the rest of the application files into the container

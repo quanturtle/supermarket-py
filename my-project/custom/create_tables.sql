@@ -3,6 +3,7 @@ CREATE TABLE IF NOT EXISTS supermarkets (
     "name" VARCHAR,
     home_url VARCHAR,
     category_urls_container_url VARCHAR,
+    category_urls_container_class VARCHAR,
     api_url VARCHAR
 );
 
@@ -37,6 +38,8 @@ CREATE TABLE IF NOT EXISTS category_urls (
 
 CREATE TABLE IF NOT EXISTS product_urls (
     id SERIAL PRIMARY KEY,
+    supermarket_id INT REFERENCES supermarkets (id),
+    description VARCHAR,
     url VARCHAR,
     created_at TIMESTAMP
 );

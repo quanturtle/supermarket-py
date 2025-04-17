@@ -1,10 +1,15 @@
+# producer.py
 import os
 import json
+import logging
 from dotenv import load_dotenv
 from redis import Redis
 from rq import Queue
 
-# Load Environment Variables (same as consumer)
+# Configure basic logging for the producer script
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+
+# Load Environment Variables
 load_dotenv()
 
 REDIS_HOST = os.getenv('REDIS_HOST', 'localhost')
@@ -15,20 +20,21 @@ RQ_QUEUE_NAME = os.getenv('RQ_QUEUE_NAME', 'default')
 
 # Sample product data
 product = {
-    "id": "PROD12345",
-    "name": "Example Widget",
-    "price": 19.99,
-    "description": "A fine example widget.",
-    "category": "Widgets",
-    "stock": 100
+    "id": f"PROD{hash(os.times()) % 10000}", # Generate a somewhat unique ID
+    "name": "Refactored Widget",
+    "price": 25.50,
+    "description": "A widget enqueued via the refactored producer.",
+    "category": "Refactored",
+    "stock": 50
 }
 
 # Convert product data to JSON string
 product_json = json.dumps(product)
 
 if __name__ == "__main__":
-    print(f"Connecting to Redis: {REDIS_HOST}:{REDIS_PORT}")
+    logging.info(f"Connecting to Redis: {REDIS_HOST}:{REDIS_PORT}")
     try:
+        # Producer doesn't need decode_responses typically
         redis_conn = Redis(
             host=REDIS_HOST,
             port=REDIS_PORT,
@@ -36,26 +42,23 @@ if __name__ == "__main__":
             db=REDIS_DB
         )
         redis_conn.ping() # Test connection
-        print("Redis connection successful.")
+        logging.info("Redis connection successful.")
     except Exception as e:
-        print(f"Error connecting to Redis: {e}")
+        logging.error(f"Error connecting to Redis: {e}", exc_info=True)
         exit(1)
 
     # Get the queue
     q = Queue(RQ_QUEUE_NAME, connection=redis_conn)
 
     # Enqueue the job
-    # The first argument is the *path* to the function the worker should execute.
-    # The following arguments are passed to that function.
-    job = q.enqueue(
-        'main.process_product_message', # Path to the function in consumer.py
-        product_json                      # Argument for the function
-    )
-
-    job = q.enqueue(
-        'main.process_product_message', # Path to the function in consumer.py
-        product_json                      # Argument for the function
-    )
-
-    print(f"Enqueued job {job.id} to queue '{RQ_QUEUE_NAME}' with data:")
-    print(product_json)
+    # IMPORTANT: The function path MUST now point to the function in consumer.py
+    function_path = 'consumer.process_product_message'
+    try:
+        job = q.enqueue(
+            function_path,
+            product_json  # Argument for the function
+        )
+        logging.info(f"Enqueued job {job.id} to queue '{RQ_QUEUE_NAME}' targeting function '{function_path}'")
+        logging.info(f"Job data: {product_json}")
+    except Exception as e:
+         logging.error(f"Failed to enqueue job: {e}", exc_info=True)

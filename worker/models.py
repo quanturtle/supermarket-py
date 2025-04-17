@@ -4,8 +4,8 @@ from typing import Any, Dict, Optional, List
 from decimal import Decimal
 from datetime import datetime
 from sqlmodel import Field, SQLModel, Relationship, create_engine, Session
-# from sqlmodel.ext.asyncio.session import AsyncSession
-# from sqlalchemy.ext.asyncio import create_async_engine
+from sqlmodel.ext.asyncio.session import AsyncSession
+from sqlalchemy.ext.asyncio import create_async_engine, AsyncEngine
 from dotenv import load_dotenv
 
 
@@ -23,12 +23,19 @@ POSTGRES_DB = os.getenv('POSTGRES_DB', 'supermarket')
 
 
 if os.getenv('IS_PROD') == 'True':
-    DATABASE_URL = f'postgresql://{POSTGRES_USER}:{POSTGRES_PASSWORD}@{POSTGRES_HOST}/{POSTGRES_DB}?sslmode=require'
-    # DATABASE_URL = f'postgresql+asyncpg://{POSTGRES_USER}:{POSTGRES_PASSWORD}@{POSTGRES_HOST}/{POSTGRES_DB}?sslmode=require'
+    # DATABASE_URL = f'postgresql://{POSTGRES_USER}:{POSTGRES_PASSWORD}@{POSTGRES_HOST}/{POSTGRES_DB}?sslmode=require'
+    DATABASE_URL = f'postgresql+asyncpg://{POSTGRES_USER}:{POSTGRES_PASSWORD}@{POSTGRES_HOST}/{POSTGRES_DB}?sslmode=require'
 
 else:
-    DATABASE_URL = f'postgresql://{POSTGRES_USER}:{POSTGRES_PASSWORD}@{POSTGRES_HOST}:{POSTGRES_PORT}/{POSTGRES_DB}'
-    # DATABASE_URL = f'postgresql+asyncpg://{POSTGRES_USER}:{POSTGRES_PASSWORD}@{POSTGRES_HOST}:{POSTGRES_PORT}/{POSTGRES_DB}'
+    # DATABASE_URL = f'postgresql://{POSTGRES_USER}:{POSTGRES_PASSWORD}@{POSTGRES_HOST}:{POSTGRES_PORT}/{POSTGRES_DB}'
+    DATABASE_URL = f'postgresql+asyncpg://{POSTGRES_USER}:{POSTGRES_PASSWORD}@{POSTGRES_HOST}:{POSTGRES_PORT}/{POSTGRES_DB}'
+
+
+engine: AsyncEngine = create_async_engine(DATABASE_URL, echo=False)
+
+async def get_session() -> AsyncSession:
+    async_session = AsyncSession(engine)
+    return async_session
 
 
 class Supermarket(SQLModel, table=True):
@@ -78,65 +85,3 @@ class Product(SQLModel, table=True):
     created_at: datetime = Field(default_factory=datetime.now)
 
     supermarket: Supermarket = Relationship(back_populates='products')
-
-
-engine = create_engine(DATABASE_URL)
-
-# engine = create_async_engine(DATABASE_URL, echo=True, pool_size=20, max_overflow=80, future=True)
-# AsyncSessionLocal = sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
-
-# async def get_session() -> AsyncGenerator[AsyncSession, None]:
-#     async with AsyncSessionLocal() as session:
-#         yield session
-
-def get_db_connection() -> Optional[Session]:
-    try:
-        session = Session(engine)
-        logger.info("Database session created successfully.")
-    
-        return session
-    
-    except Exception as e:
-        logger.error(f"Failed to create database session: {e}", exc_info=True)
-    
-        return None
-
-
-def insert_product_to_db(product_data: Dict[str, Any], session: Session) -> bool:
-    try:
-        product = Product(**product_data)
-
-        session.add(product)
-        session.commit()
-        session.refresh(product)
-    
-        logger.info(f"Inserted/updated product ID: {product.description}")
-    
-        return True
-    
-    except Exception as e:
-        logger.error(f"Failed to insert/update product: {e}", exc_info=True)
-        session.rollback()
-    
-        return False
-    
-    finally:
-        session.close()
-
-# async def insert_product_to_db(product_data: Dict[str, Any], session: AsyncSession) -> bool:
-#     try:
-#         product = Product(**product_data)
-        
-#         session.add(product)
-#         await session.commit()
-#         await session.refresh(product)
-        
-#         logger.info(f"Inserted/updated product ID: {product.id}")
-        
-#         return True
-
-#     except Exception as e:
-#         logger.error(f"Failed to insert/update product: {e}", exc_info=True)
-#         await session.rollback()
-        
-#         return False

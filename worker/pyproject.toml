@@ -5,9 +5,10 @@ description = "Add your description here"
 readme = "README.md"
 requires-python = ">=3.10.16"
 dependencies = [
+    "asyncpg>=0.30.0",
+    "greenlet>=3.2.0",
     "psycopg2-binary>=2.9.10",
     "python-dotenv>=1.1.0",
-    "redis>=5.0.8",
-    "rq>=2.3.2",
+    "redis[asyncio]>=5.0.8",
     "sqlmodel>=0.0.24",
 ]

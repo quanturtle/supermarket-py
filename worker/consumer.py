@@ -1,74 +1,72 @@
-import logging
+# consumer.py
+import asyncio
 import json
-import models
+import logging
+import redis.asyncio as redis
+from redis.exceptions import LockError
+from sqlmodel import SQLModel
+from models import Product, engine, get_session
+
+STREAM_NAME = "products_stream"
+OFFSET_KEY = "stream_offset"
+LOCK_KEY = "stream_lock"
+BATCH_SIZE = 100
+LOCK_TIMEOUT = 60
+
+redis_conn = redis.Redis(decode_responses=True)
+
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s [%(name)s] %(levelname)s: %(message)s",
+    datefmt="%Y-%m-%d %H:%M:%S"
+)
 
 
-logger = logging.getLogger(__name__)
+async def run_worker(worker_id: int):
+    logger = logging.getLogger(f"Worker-{worker_id}")
+    while True:
+        try:
+            lock = redis_conn.lock(LOCK_KEY, timeout=LOCK_TIMEOUT, blocking_timeout=5)
+            got_lock = await lock.acquire()
 
+            if not got_lock:
+                await asyncio.sleep(1)
+                continue
 
-def process_product_message(product_json_string):
-    """
-    This function is executed by the RQ worker for each job.
-    It parses the JSON and calls the database insertion function from models.py.
-    """
-    logger.info(f"Processing job...")
-    logger.debug(f"Received raw data: {product_json_string}")
+            last_id = await redis_conn.get(OFFSET_KEY)
+            start_id = f"({last_id}" if last_id else "-"
 
-    try:
-        product_data = json.loads(product_json_string)
-        logger.info(f"Parsed product data for ID: {product_data.get('description', 'N/A')}")
+            entries = await redis_conn.xrange(STREAM_NAME, min=start_id, max="+", count=BATCH_SIZE)
 
-        db_conn = models.get_db_connection()
+            if not entries:
+                logger.info("No new stream entries.")
+                await asyncio.sleep(1)
+                continue
 
-        success = False # Initialize success flag
+            batch = []
+            for entry_id, fields in entries:
+                try:
+                    product_data = json.loads(fields["data"])
+                    batch.append(Product(**product_data))
+                except Exception as e:
+                    logger.warning(f"Skipping entry {entry_id}: {e}")
 
-        if db_conn:
+            async with await get_session() as session:
+                session.add_all(batch)
+                await session.commit()
+                logger.info(f"Inserted {len(batch)} products to DB.")
+
+            last_entry_id = entries[-1][0]
+            await redis_conn.set(OFFSET_KEY, last_entry_id)
+            logger.info(f"Advanced offset to {last_entry_id}")
+
+        except LockError:
+            logger.warning("Failed to acquire lock.")
+        except Exception as e:
+            logger.exception("Worker error")
+        finally:
             try:
-                success = models.insert_product_to_db(product_data, db_conn)
-                # Close connection if necessary (depends on get_db_connection implementation)
-                # e.g., if get_db_connection returns a real connection object:
-                # if hasattr(db_conn, 'close'):
-                #     db_conn.close()
-                #     logger.debug("Closed database connection.")
-                # else:
-                #     logger.debug("Placeholder: 'Closed' database connection.")
-                logger.debug("Placeholder: 'Closed' database connection.")
-
-            except Exception as db_exc:
-                 logger.error(f"Error during database operation: {db_exc}", exc_info=True)
-                 success = False
-                 # Optionally re-raise or handle specific DB exceptions differently
-                 # raise # Re-raise to mark job as failed immediately
-
-        else:
-            logger.error("Skipping database insertion due to connection failure.")
-            # Force the job to fail if DB connection is essential
-            # Setting success to False and raising error later ensures logging before failure
-            success = False
-            # raise ConnectionError("Failed to get database connection.") # Option to fail fast
-
-        # Final status check after operations
-        if success:
-            logger.info(f"Successfully processed product ID: {product_data.get('description', 'N/A')}")
-            # RQ considers the job successful if no exception is raised
-        
-        else:
-            logger.error(f"Failed to process product ID: {product_data.get('description', 'N/A')}")
-            
-            # Raise an exception to mark the job as failed in RQ
-            # Choose an appropriate error type
-            raise RuntimeError(f"Processing failed for product ID: {product_data.get('description', 'N/A')}")
-
-    except json.JSONDecodeError as e:
-        logger.error(f"Invalid JSON received: {e}", exc_info=True)
-        logger.error(f"Problematic data snippet: {product_json_string[:200]}")
-        
-        # Let RQ handle the failure by raising the exception
-        raise ValueError(f"Invalid JSON format: {e}") from e
-    
-    except Exception as e:
-        # Catch any other unexpected errors during processing
-        logger.error(f"An unexpected error occurred processing job: {e}", exc_info=True)
-        
-        # Re-raise the exception so RQ marks the job as failed
-        raise
+                await lock.release()
+            except Exception:
+                pass
+            await asyncio.sleep(0.5)

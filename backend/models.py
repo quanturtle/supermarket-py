@@ -66,9 +66,10 @@ class Product(SQLModel, table=True):
     
     id: Optional[int] = Field(default=None, primary_key=True)
     supermarket_id: int = Field(foreign_key='supermarkets.id')
-    name: str
+    description: str
     sku: str
     price: Decimal
+    url: str
     created_at: datetime = Field(default_factory=datetime.now())
 
     supermarket: Supermarket = Relationship(back_populates='products')

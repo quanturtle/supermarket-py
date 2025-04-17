@@ -1,99 +1,120 @@
-# models.py
 import os
 import logging
-import time
+from typing import Any, Dict, Optional, List
+from decimal import Decimal
+from datetime import datetime
+from sqlmodel import Field, SQLModel, Relationship, create_engine, Session
 from dotenv import load_dotenv
 
-# Load environment variables to make them available here if needed directly
-# Alternatively, pass config values as arguments to functions
+
 load_dotenv()
 
-# Setup logger for this module
+
+POSTGRES_USER = os.getenv('POSTGRES_USER', 'postgres')
+POSTGRES_PASSWORD = os.getenv('POSTGRES_PASSWORD', 'postgres')
+POSTGRES_HOST = os.getenv('POSTGRES_HOST', 'localhost')
+POSTGRES_PORT = os.getenv('POSTGRES_PORT', '5432')
+POSTGRES_DB = os.getenv('POSTGRES_DB', 'supermarket')
+
+
+if os.getenv('IS_PROD') == 'True':
+    DATABASE_URL = f'postgresql://{POSTGRES_USER}:{POSTGRES_PASSWORD}@{POSTGRES_HOST}/{POSTGRES_DB}?sslmode=require'
+else:
+    DATABASE_URL = f'postgresql://{POSTGRES_USER}:{POSTGRES_PASSWORD}@{POSTGRES_HOST}:{POSTGRES_PORT}/{POSTGRES_DB}'
+
+engine = create_engine(DATABASE_URL)
+
+
+class Supermarket(SQLModel, table=True):
+    __tablename__ = 'supermarkets'
+    id: Optional[int] = Field(default=None, primary_key=True)
+    name: str
+    home_url: Optional[str] = None
+    category_urls_container_url: Optional[str] = None
+    category_urls_container_class: Optional[str] = None
+    api_url: Optional[str] = None
+
+    category_urls: List['CategoryURL'] = Relationship(back_populates='supermarket')
+    product_urls: List['ProductURL'] = Relationship(back_populates='supermarket')
+    products: List['Product'] = Relationship(back_populates='supermarket')
+
+
+class CategoryURL(SQLModel, table=True):
+    __tablename__ = 'category_urls'
+    id: Optional[int] = Field(default=None, primary_key=True)
+    supermarket_id: int = Field(foreign_key='supermarkets.id')
+    description: str
+    url: str
+    created_at: datetime = Field(default_factory=datetime.now)
+
+    supermarket: Supermarket = Relationship(back_populates='category_urls')
+
+
+class ProductURL(SQLModel, table=True):
+    __tablename__ = 'product_urls'
+    id: Optional[int] = Field(default=None, primary_key=True)
+    supermarket_id: int = Field(foreign_key='supermarkets.id')
+    description: str
+    url: str
+    created_at: datetime = Field(default_factory=datetime.now)
+
+    supermarket: Supermarket = Relationship(back_populates='product_urls')
+
+
+class Product(SQLModel, table=True):
+    __tablename__ = 'products'
+    id: Optional[int] = Field(default=None, primary_key=True)
+    supermarket_id: int = Field(foreign_key='supermarkets.id')
+    description: str
+    sku: str
+    price: Decimal
+    url: str
+    created_at: datetime = Field(default_factory=datetime.now)
+
+    supermarket: Supermarket = Relationship(back_populates='products')
+
+
 logger = logging.getLogger(__name__)
 
-# Database Credentials (read directly for placeholder simplicity)
-POSTGRES_DBNAME = os.getenv('POSTGRES_DBNAME')
-POSTGRES_USER = os.getenv('POSTGRES_USER')
-POSTGRES_PASSWORD = os.getenv('POSTGRES_PASSWORD')
-POSTGRES_HOST = os.getenv('POSTGRES_HOST')
-POSTGRES_PORT = os.getenv('POSTGRES_PORT')
 
-def get_db_connection():
+def get_db_connection() -> Optional[Session]:
     """
-    Placeholder function to establish a PostgreSQL connection.
-    Replace with actual psycopg2 or other DB library connection logic.
+    Create and return a new SQLModel Session for database operations.
     """
-    logger.info("Attempting to connect to PostgreSQL (Placeholder)...")
-    if not all([POSTGRES_DBNAME, POSTGRES_USER, POSTGRES_PASSWORD, POSTGRES_HOST, POSTGRES_PORT]):
-        logger.error("Database configuration missing in environment variables.")
-        return None
     try:
-        # --- Replace with actual connection ---
-        # import psycopg2
-        # conn = psycopg2.connect(
-        #     dbname=POSTGRES_DBNAME,
-        #     user=POSTGRES_USER,
-        #     password=POSTGRES_PASSWORD,
-        #     host=POSTGRES_HOST,
-        #     port=POSTGRES_PORT
-        # )
-        # logger.info("Database connection successful.")
-        # return conn # Return the actual connection object
-        # --- End Replace ---
-
-        # Simulate connection attempt
-        time.sleep(0.1)
-        logger.info("Placeholder: Simulated database connection successful.")
-        return {"dummy_connection": True} # Or simply None if preferred
-
-    except Exception as e: # Catch specific DB errors in real implementation
-        logger.error(f"Placeholder: Failed to connect to database: {e}", exc_info=True)
+        session = Session(engine)
+        logger.info("Database session created successfully.")
+        return session
+    except Exception as e:
+        logger.error(f"Failed to create database session: {e}", exc_info=True)
         return None
 
-def insert_product_to_db(product_data, connection):
-    """
-    Placeholder function to insert product data into the database.
-    Replace with actual database insertion logic using the connection.
-    """
-    logger.info(f"Attempting to insert product (Placeholder): {product_data.get('id', 'N/A')}")
-    if connection is None:
-        logger.error("Cannot insert product, database connection is invalid.")
-        return False
 
+def insert_product_to_db(product_data: Dict[str, Any], session: Session) -> bool:
+    """
+    Insert or update a Product record based on incoming JSON data.
+
+    Expects product_data to have keys matching the Product model fields,
+    e.g., supermarket_id, name, sku, price, created_at.
+    """
     try:
-        # --- Replace with actual insertion ---
-        # with connection.cursor() as cursor:
-        #     # Example: Adjust table_name and columns as needed
-        #     sql = """
-        #         INSERT INTO products (product_id, name, price, description, received_at)
-        #         VALUES (%s, %s, %s, %s, NOW())
-        #         ON CONFLICT (product_id) DO UPDATE SET
-        #             name = EXCLUDED.name,
-        #             price = EXCLUDED.price,
-        #             description = EXCLUDED.description,
-        #             received_at = NOW();
-        #     """
-        #     cursor.execute(sql, (
-        #         product_data.get('id'),
-        #         product_data.get('name'),
-        #         product_data.get('price'),
-        #         product_data.get('description')
-        #     ))
-        # connection.commit() # Commit the transaction
-        # logger.info(f"Successfully inserted/updated product: {product_data.get('id', 'N/A')}")
-        # return True
-        # --- End Replace ---
+        # Instantiate Product model from JSON payload
+        product = Product(**product_data)
 
-        # Simulate database work
-        time.sleep(0.2)
-        logger.info(f"Placeholder: Simulated insertion successful for product: {product_data.get('id', 'N/A')}")
-        return True # Simulate success
-
-    except Exception as e: # Catch specific DB errors
-        logger.error(f"Placeholder: Failed to insert product data: {e}", exc_info=True)
-        # if connection: # Rollback in real implementation
-        #    connection.rollback()
+        # Add to session and commit (upsert behaviour via primary key)
+        session.add(product)
+        session.commit()
+        session.refresh(product)
+        logger.info(f"Inserted/updated product ID: {product.description}")
+    
+        return True
+    
+    except Exception as e:
+        logger.error(f"Failed to insert/update product: {e}", exc_info=True)
+        session.rollback()
+    
         return False
-    # finally:
-        # Decide connection closing strategy based on implementation in get_db_connection
-        # pass # Placeholder doesn't need closing
+    
+    finally:
+        # Close the session to free resources
+        session.close()

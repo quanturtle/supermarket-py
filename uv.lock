@@ -2,6 +2,12 @@ version = 1
 revision = 1
 requires-python = ">=3.10.16, <3.10.17"
 
+[manifest]
+members = [
+    "supermarket-py",
+    "worker",
+]
+
 [[package]]
 name = "aiofiles"
 version = "22.1.0"
@@ -1923,6 +1929,15 @@ wheels = [
 ]
 
 [[package]]
+name = "python-dotenv"
+version = "1.1.0"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/88/2c/7bb1416c5620485aa793f2de31d3df393d3686aa8a8506d11e10e13c5baf/python_dotenv-1.1.0.tar.gz", hash = "sha256:41f90bc6f5f177fb41f53e87666db362025010eb28f60a01c9143bfa33a2b2d5", size = 39920 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/1e/18/98a99ad95133c6a6e2005fe89faedf294a748bd5dc803008059409ac9b1e/python_dotenv-1.1.0-py3-none-any.whl", hash = "sha256:d7c01d9e2293916c18baf562d95698754b0dbbb5e74d457c45d4f6561fb9d55d", size = 20256 },
+]
+
+[[package]]
 name = "python-json-logger"
 version = "3.3.0"
 source = { registry = "https://pypi.org/simple" }
@@ -2151,6 +2166,19 @@ wheels = [
     { url = "https://files.pythonhosted.org/packages/fc/69/b7d1003166d78685da032b3c4ff1599fa536a3cfe6e5ce2da87c9c431906/rpds_py-0.24.0-pp310-pypy310_pp73-musllinux_1_2_i686.whl", hash = "sha256:d8754d872a5dfc3c5bf9c0e059e8107451364a30d9fd50f1f1a85c4fb9481164", size = 592398 },
     { url = "https://files.pythonhosted.org/packages/ea/a8/1c98bc99338c37faadd28dd667d336df7409d77b4da999506a0b6b1c0aa2/rpds_py-0.24.0-pp310-pypy310_pp73-musllinux_1_2_x86_64.whl", hash = "sha256:896c41007931217a343eff197c34513c154267636c8056fb409eafd494c3dcdc", size = 561114 },
     { url = "https://files.pythonhosted.org/packages/2b/41/65c91443685a4c7b5f1dd271beadc4a3e063d57c3269221548dd9416e15c/rpds_py-0.24.0-pp310-pypy310_pp73-win_amd64.whl", hash = "sha256:92558d37d872e808944c3c96d0423b8604879a3d1c86fdad508d7ed91ea547d5", size = 235548 },
+]
+
+[[package]]
+name = "rq"
+version = "2.3.2"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "click" },
+    { name = "redis" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/43/8d/bb57bca979f48869aea0b7b9752b0887848a7098352753021fdcbdaf0efb/rq-2.3.2.tar.gz", hash = "sha256:5bd212992724428ec1689736abde783d245e7856bca39d89845884f5d580f5f1", size = 649216 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/3f/bf/08d99660c138354a83105efa64988ee4adc8ddc6c74866f29508aaff00f7/rq-2.3.2-py3-none-any.whl", hash = "sha256:bf4dc622a7b9d5f7d4a39444f26d89ce6de8a1d6db61b21060612114dbf8d5ff", size = 100389 },
 ]
 
 [[package]]
@@ -3047,6 +3075,23 @@ source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/56/fc/238c424fd7f4ebb25f8b1da9a934a3ad7c848286732ae04263661eb0fc03/widgetsnbextension-4.0.13.tar.gz", hash = "sha256:ffcb67bc9febd10234a362795f643927f4e0c05d9342c727b65d2384f8feacb6", size = 1164730 }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/21/02/88b65cc394961a60c43c70517066b6b679738caf78506a5da7b88ffcb643/widgetsnbextension-4.0.13-py3-none-any.whl", hash = "sha256:74b2692e8500525cc38c2b877236ba51d34541e6385eeed5aec15a70f88a6c71", size = 2335872 },
+]
+
+[[package]]
+name = "worker"
+version = "0.1.0"
+source = { virtual = "worker" }
+dependencies = [
+    { name = "python-dotenv" },
+    { name = "redis" },
+    { name = "rq" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "python-dotenv", specifier = ">=1.1.0" },
+    { name = "redis", specifier = ">=5.0.8" },
+    { name = "rq", specifier = ">=2.3.2" },
 ]
 
 [[package]]

@@ -63,17 +63,19 @@ docker compose -f docker-compose-dev.yaml build && docker compose -f docker-comp
 docker compose -f docker-compose-prod.yaml build && docker compose -f docker-compose-prod.yaml up
 ```
 
-TODO:
-New URLs:
-* https://supermercadolabomba.com/index.php?class=Inicio
-* https://losjardinesonline.com.py/
-* https://www.supermas.com.py/
-* https://kingo.com.py/index.php?class=Inicio
-* https://www.fortis.com.py/
-* https://grutteronline.casagrutter.com.py/
-* https://www.salemmaonline.com.py/
+## TODO:
+* Upgrade containers to use `UV`
 
-* Standarize URLs (https://www.supermas.com.py/)
+* New URLs:
+    * https://supermercadolabomba.com/index.php?class=Inicio
+    * https://losjardinesonline.com.py/
+    * https://www.supermas.com.py/
+    * https://kingo.com.py/index.php?class=Inicio
+    * https://www.fortis.com.py/
+    * https://grutteronline.casagrutter.com.py/
+    * https://www.salemmaonline.com.py/
+
+* Standarize URLs (https://www.supermas.com.py/), fully qualified urls:
     * https://
     * www.
     * .com.py/

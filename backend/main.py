@@ -19,7 +19,7 @@ if os.getenv('IS_PROD') == 'True':
 else:
     origins = [
         'http://localhost:8000',
-        'https://localhost:8000'
+        'http://localhost:3000'
     ]
 
 
@@ -187,7 +187,7 @@ async def price_comparison(shopping_list: List[dict], session: Session = Depends
     }
 
 
-def compute_global_inflation(inflation_df: pd.DataFrame, start_date: datetime, end_date: datetime) -> Dict:
+def compute_global_inflation(inflation_df: pd.DataFrame, start_date: datetime, end_date: datetime):
     # group by and compute gap
     inflation_by_date_df = inflation_df.groupby(by='created_at')['price'].agg(['min', 'max', 'mean']).reset_index()
     inflation_by_date_df['gap'] = inflation_by_date_df['max'] - inflation_by_date_df['min']
@@ -229,7 +229,7 @@ def compute_global_inflation(inflation_df: pd.DataFrame, start_date: datetime, e
     }
 
 
-def compute_per_product_inflation(inflation_df: pd.DataFrame, start_date: datetime, end_date: datetime): #-> List[Dict]:
+def compute_per_product_inflation(inflation_df: pd.DataFrame, start_date: datetime, end_date: datetime):
     unique_skus = inflation_df['sku'].unique()
 
     results = []

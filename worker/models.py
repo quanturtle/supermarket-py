@@ -4,10 +4,15 @@ from typing import Any, Dict, Optional, List
 from decimal import Decimal
 from datetime import datetime
 from sqlmodel import Field, SQLModel, Relationship, create_engine, Session
+# from sqlmodel.ext.asyncio.session import AsyncSession
+# from sqlalchemy.ext.asyncio import create_async_engine
 from dotenv import load_dotenv
 
 
 load_dotenv()
+
+
+logger = logging.getLogger(__name__)
 
 
 POSTGRES_USER = os.getenv('POSTGRES_USER', 'postgres')
@@ -19,10 +24,11 @@ POSTGRES_DB = os.getenv('POSTGRES_DB', 'supermarket')
 
 if os.getenv('IS_PROD') == 'True':
     DATABASE_URL = f'postgresql://{POSTGRES_USER}:{POSTGRES_PASSWORD}@{POSTGRES_HOST}/{POSTGRES_DB}?sslmode=require'
+    # DATABASE_URL = f'postgresql+asyncpg://{POSTGRES_USER}:{POSTGRES_PASSWORD}@{POSTGRES_HOST}/{POSTGRES_DB}?sslmode=require'
+
 else:
     DATABASE_URL = f'postgresql://{POSTGRES_USER}:{POSTGRES_PASSWORD}@{POSTGRES_HOST}:{POSTGRES_PORT}/{POSTGRES_DB}'
-
-engine = create_engine(DATABASE_URL)
+    # DATABASE_URL = f'postgresql+asyncpg://{POSTGRES_USER}:{POSTGRES_PASSWORD}@{POSTGRES_HOST}:{POSTGRES_PORT}/{POSTGRES_DB}'
 
 
 class Supermarket(SQLModel, table=True):
@@ -74,37 +80,36 @@ class Product(SQLModel, table=True):
     supermarket: Supermarket = Relationship(back_populates='products')
 
 
-logger = logging.getLogger(__name__)
+engine = create_engine(DATABASE_URL)
 
+# engine = create_async_engine(DATABASE_URL, echo=True, pool_size=20, max_overflow=80, future=True)
+# AsyncSessionLocal = sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
+
+# async def get_session() -> AsyncGenerator[AsyncSession, None]:
+#     async with AsyncSessionLocal() as session:
+#         yield session
 
 def get_db_connection() -> Optional[Session]:
-    """
-    Create and return a new SQLModel Session for database operations.
-    """
     try:
         session = Session(engine)
         logger.info("Database session created successfully.")
+    
         return session
+    
     except Exception as e:
         logger.error(f"Failed to create database session: {e}", exc_info=True)
+    
         return None
 
 
 def insert_product_to_db(product_data: Dict[str, Any], session: Session) -> bool:
-    """
-    Insert or update a Product record based on incoming JSON data.
-
-    Expects product_data to have keys matching the Product model fields,
-    e.g., supermarket_id, name, sku, price, created_at.
-    """
     try:
-        # Instantiate Product model from JSON payload
         product = Product(**product_data)
 
-        # Add to session and commit (upsert behaviour via primary key)
         session.add(product)
         session.commit()
         session.refresh(product)
+    
         logger.info(f"Inserted/updated product ID: {product.description}")
     
         return True
@@ -116,5 +121,22 @@ def insert_product_to_db(product_data: Dict[str, Any], session: Session) -> bool
         return False
     
     finally:
-        # Close the session to free resources
         session.close()
+
+# async def insert_product_to_db(product_data: Dict[str, Any], session: AsyncSession) -> bool:
+#     try:
+#         product = Product(**product_data)
+        
+#         session.add(product)
+#         await session.commit()
+#         await session.refresh(product)
+        
+#         logger.info(f"Inserted/updated product ID: {product.id}")
+        
+#         return True
+
+#     except Exception as e:
+#         logger.error(f"Failed to insert/update product: {e}", exc_info=True)
+#         await session.rollback()
+        
+#         return False

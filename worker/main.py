@@ -5,6 +5,8 @@ from redis import Redis, exceptions as redis_exceptions
 from rq import Queue #, Worker
 from rq.worker import SimpleWorker
 
+# disable macOS ObjC fork-safety abort to avoid Worker error otherwise, use SimpleWorker to avoid fork
+# os.environ['OBJC_DISABLE_INITIALIZE_FORK_SAFETY'] = 'YES'
 
 load_dotenv()
 
@@ -43,6 +45,7 @@ if __name__ == "__main__":
             password=REDIS_PASSWORD,
             db=REDIS_DB
         )
+        
         redis_connection.ping()
         logger.info(f"Redis connection successful: {REDIS_HOST}:{REDIS_PORT} DB: {REDIS_DB}")
 
@@ -59,6 +62,7 @@ if __name__ == "__main__":
     worker = SimpleWorker(queues_to_listen, connection=redis_connection)
 
     logger.info("Worker starting processing loop... Press Ctrl+C to exit.")
+    
     try:
         worker.work(with_scheduler=False) # Set burst=True to run once and exit
 

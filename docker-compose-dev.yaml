@@ -1,4 +1,18 @@
 services:
+  redis:
+    image: redis:7.4-alpine
+    restart: always
+    container_name: supermarket-redis
+    ports:
+      - "${REDIS_PORT:-6379}:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+  
   db:
     image: timescale/timescaledb-ha:pg17
     restart: always
@@ -17,6 +31,28 @@ services:
       timeout: 5s
       retries: 5
 
+  worker:
+    build:
+      context: ./worker
+      dockerfile: Dockerfile
+    restart: always
+    container_name: supermarket-worker
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_HOST: db
+      POSTGRES_PORT: 5432
+      POSTGRES_DB: ${POSTGRES_DB}
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      BATCH_SIZE: ${BATCH_SIZE:-100}
+      BATCH_TIME_LIMIT: ${BATCH_TIME_LIMIT:-10}
+    ports:
+      - "${WORKER_PORT:-6380}:6380"
+    depends_on:
+      - redis
+      - db
+  
   backend:
     build:
       context: ./backend
@@ -68,3 +104,4 @@ services:
       
 volumes:
   postgres_data:
+  redis_data:

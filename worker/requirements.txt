@@ -1,1 +1,15 @@
+annotated-types==0.7.0
+async-timeout==5.0.1
+asyncpg==0.30.0
+click==8.1.8
+greenlet==3.2.0
+psycopg2-binary==2.9.10
+pydantic==2.11.3
+pydantic-core==2.33.1
 python-dotenv==1.1.0
+redis==5.2.1
+rq==2.3.2
+sqlalchemy==2.0.40
+sqlmodel==0.0.24
+typing-extensions==4.13.2
+typing-inspection==0.4.0

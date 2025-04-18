@@ -102,6 +102,7 @@ async def push_products(n=PRODUCT_COUNT, mode='stream'):
 
 if __name__ == "__main__":
 	parser = argparse.ArgumentParser(description="Redis Stream Producer")
+	
 	parser.add_argument(
 		"--mode",
 		type=str,
@@ -109,18 +110,21 @@ if __name__ == "__main__":
 		default='stream',
 		help="Producer mode: 'stream' (one by one) or 'bulk' (pipeline). Defaults to 'stream'."
 	)
+	
 	parser.add_argument(
 		"--count",
 		type=int,
 		default=PRODUCT_COUNT,
 		help=f"Number of products to push. Defaults to {PRODUCT_COUNT} (or PRODUCER_PRODUCT_COUNT env var)."
 	)
+
 	parser.add_argument(
 		"--sleep",
 		type=float,
 		default=SLEEP_INTERVAL,
 		help=f"Sleep interval between messages in 'stream' mode (seconds). Defaults to {SLEEP_INTERVAL} (or PRODUCER_SLEEP env var)."
 	)
+	
 	args = parser.parse_args()
 
 	PRODUCT_COUNT = args.count

@@ -39,6 +39,7 @@ def handle_shutdown_signal(sig, frame):
     else:
         logger.warning(f'Received signal {sig} again. Shutdown already in progress.')
 
+
 async def main():
     logger.info('Application starting...')
 

@@ -1,19 +1,17 @@
-from typing import Optional, List
-from decimal import Decimal
+from typing import Optional
 from datetime import datetime
 from sqlmodel import Field, SQLModel, Relationship
 
 from models.supermarket import Supermarket
 
 
-class Product(SQLModel, table=True):
-    __tablename__ = 'products'
+class CategoryURL(SQLModel, table=True):
+    __tablename__ = 'category_urls'
+    
     id: Optional[int] = Field(default=None, primary_key=True)
     supermarket_id: int = Field(foreign_key='supermarkets.id')
     description: str
-    sku: str
-    price: Decimal
     url: str
     created_at: datetime = Field(default_factory=datetime.now)
     
-    supermarket: Supermarket = Relationship(back_populates='products')
+    supermarket: Supermarket = Relationship(back_populates='category_urls')

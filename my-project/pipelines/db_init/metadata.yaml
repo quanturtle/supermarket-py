@@ -10,29 +10,6 @@ blocks:
     limit: 1000
     use_raw_sql: true
   downstream_blocks:
-  - create_tables
-  executor_config: null
-  executor_type: local_python
-  has_callback: false
-  language: sql
-  name: create_schemas
-  retry_config: null
-  status: updated
-  timeout: null
-  type: custom
-  upstream_blocks: []
-  uuid: create_schemas
-- all_upstream_blocks_executed: false
-  color: pink
-  configuration:
-    data_provider: postgres
-    data_provider_profile: default
-    dbt: {}
-    disable_query_preprocessing: true
-    export_write_policy: append
-    limit: 1000
-    use_raw_sql: true
-  downstream_blocks:
   - create_hypertables
   executor_config: null
   executor_type: local_python
@@ -43,8 +20,7 @@ blocks:
   status: updated
   timeout: null
   type: custom
-  upstream_blocks:
-  - create_schemas
+  upstream_blocks: []
   uuid: create_tables
 - all_upstream_blocks_executed: false
   color: pink
@@ -77,7 +53,7 @@ concurrency_config: {}
 conditionals: []
 created_at: '2025-04-03 17:48:40.541356+00:00'
 data_integration: null
-description: database initialization
+description: Create database schemas and tables
 executor_config: {}
 executor_count: 1
 executor_type: null

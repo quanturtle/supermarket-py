@@ -1,5 +1,5 @@
 import pandas as pd
-from typing import List, Dict
+
 
 if 'transformer' not in globals():
     from mage_ai.data_preparation.decorators import transformer
@@ -8,17 +8,26 @@ if 'test' not in globals():
 
 
 @transformer
-def transform(data, *args, **kwargs) -> List[List[Dict]]:
+def transform(data: pd.DataFrame, *args, **kwargs):
+    data.drop_duplicates(subset='url', keep='first', inplace=True)
+
     category_urls = []
     metadata = []
 
     for idx, row in data.iterrows():
-        category_urls.append(dict(id=idx, url=row['url'], supermarket_id=row['supermarket_id']))
-        metadata.append(dict(block_uuid=f'for_url_{idx}'))
+        category_urls.append({
+            'id': idx,
+            'url': row['url'],
+            'supermarket_id': row['supermarket_id']
+        })
+        
+        metadata.append({
+            'block_uuid': f'visiting_{row["url"]}'
+        })
 
     return [
         category_urls,
-        metadata,
+        metadata
     ]
 
 

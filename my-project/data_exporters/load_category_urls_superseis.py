@@ -1,31 +1,28 @@
-from mage_ai.settings.repo import get_repo_path
-from mage_ai.io.config import ConfigFileLoader
-from mage_ai.io.postgres import Postgres
-from pandas import DataFrame
-from os import path
+import os
+import json
+import redis
+import pandas as pd
+
 
 if 'data_exporter' not in globals():
     from mage_ai.data_preparation.decorators import data_exporter
 
 
 @data_exporter
-def export_data_to_postgres(df: DataFrame, **kwargs) -> None:
-    """
-    Template for exporting data to a PostgreSQL database.
-    Specify your configuration settings in 'io_config.yaml'.
+def export_data(data: pd.DataFrame, *args, **kwargs):
+    REDIS_HOST = os.getenv('REDIS_HOST', 'localhost')
+    REDIS_PORT = os.getenv('REDIS_PORT', '6379')
+    STREAM_NAME = 'category_urls_stream'
+    
+    redis_conn = redis.Redis(host=REDIS_HOST, port=REDIS_PORT, decode_responses=True)
 
-    Docs: https://docs.mage.ai/design/data-loading#postgresql
-    """
-    schema_name = 'public'  # Specify the name of the schema to export data to
-    table_name = 'category_urls'  # Specify the name of the table to export data to
-    config_path = path.join(get_repo_path(), 'io_config.yaml')
-    config_profile = 'default'
+    pipeline = redis_conn.pipeline()
 
-    with Postgres.with_config(ConfigFileLoader(config_path, config_profile)) as loader:
-        loader.export(
-            df,
-            schema_name,
-            table_name,
-            index=False,  # Specifies whether to include index in exported table
-            if_exists='append',  # Specify resolution policy if table name already exists
-        )
+    data['created_at'] = data['created_at'].apply(lambda x: x.isoformat())
+
+    for idx, category_url in data.iterrows():
+        pipeline.xadd(STREAM_NAME, {'data': json.dumps(category_url.to_dict())})
+
+    pipeline.execute()
+    
+    return {'status': 'completed'}

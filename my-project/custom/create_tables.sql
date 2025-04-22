@@ -28,6 +28,14 @@ CREATE TABLE IF NOT EXISTS supermarket_configs (
     product_container_sku_attrs VARCHAR
 );
 
+CREATE TABLE IF NOT EXISTS category_urls_html (
+    id SERIAL PRIMARY KEY,
+    supermarket_id INT REFERENCES supermarkets (id),
+    html TEXT,
+    url VARCHAR,
+    created_at TIMESTAMP
+);
+
 CREATE TABLE IF NOT EXISTS category_urls (
     id SERIAL PRIMARY KEY,
     supermarket_id INT REFERENCES supermarkets (id),
@@ -36,10 +44,26 @@ CREATE TABLE IF NOT EXISTS category_urls (
     created_at TIMESTAMP
 );
 
+CREATE TABLE IF NOT EXISTS product_urls_html (
+    id SERIAL PRIMARY KEY,
+    supermarket_id INT REFERENCES supermarkets (id),
+    html TEXT,
+    url VARCHAR,
+    created_at TIMESTAMP
+);
+
 CREATE TABLE IF NOT EXISTS product_urls (
     id SERIAL PRIMARY KEY,
     supermarket_id INT REFERENCES supermarkets (id),
     description VARCHAR,
+    url VARCHAR,
+    created_at TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS products_html (
+    id SERIAL PRIMARY KEY,
+    supermarket_id INT REFERENCES supermarkets (id),
+    html TEXT,
     url VARCHAR,
     created_at TIMESTAMP
 );

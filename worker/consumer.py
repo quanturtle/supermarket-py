@@ -14,14 +14,14 @@ from dotenv import load_dotenv
 load_dotenv()
 
 
-CATEGORY_URL_STREAM_NAME = os.getenv("CATEGORY_URL_STREAM_NAME", "category_url_stream")
-CATEGORY_URL_HTML_STREAM_NAME = os.getenv("CATEGORY_URL_HTML_STREAM_NAME", "category_url_html_stream")
+CATEGORY_URL_STREAM_NAME = os.getenv("CATEGORY_URL_STREAM_NAME", "category_urls_stream")
+CATEGORY_URL_HTML_STREAM_NAME = os.getenv("CATEGORY_URL_HTML_STREAM_NAME", "category_urls_html_stream")
 
-PRODUCT_URL_STREAM_NAME = os.getenv("PRODUCT_URL_STREAM_NAME", "product_url_stream")
-PRODUCT_URL_HTML_STREAM_NAME = os.getenv("PRODUCT_URL_HTML_STREAM_NAME", "product_url_html_stream")
+PRODUCT_URL_STREAM_NAME = os.getenv("PRODUCT_URL_STREAM_NAME", "product_urls_stream")
+PRODUCT_URL_HTML_STREAM_NAME = os.getenv("PRODUCT_URL_HTML_STREAM_NAME", "product_urls_html_stream")
 
 PRODUCT_STREAM_NAME = os.getenv("PRODUCT_STREAM_NAME", "products_stream")
-PRODUCT_HTML_STREAM_NAME = os.getenv("PRODUCT_HTML_STREAM_NAME", "product_html_stream")
+PRODUCT_HTML_STREAM_NAME = os.getenv("PRODUCT_HTML_STREAM_NAME", "products_html_stream")
 
 
 STREAM_MODEL_MAP: Dict[str, Type] = {

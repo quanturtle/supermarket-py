@@ -1,0 +1,106 @@
+blocks:
+- all_upstream_blocks_executed: true
+  color: null
+  configuration:
+    data_provider: postgres
+    data_provider_profile: default
+    dbt: {}
+    disable_query_preprocessing: false
+    export_write_policy: append
+    limit: 1000
+    use_raw_sql: true
+  downstream_blocks:
+  - fan_products_html_superseis
+  executor_config: null
+  executor_type: local_python
+  has_callback: false
+  language: sql
+  name: extract_products_html_superseis
+  retry_config: null
+  status: executed
+  timeout: null
+  type: data_loader
+  upstream_blocks: []
+  uuid: extract_products_html_superseis
+- all_upstream_blocks_executed: true
+  color: null
+  configuration:
+    data_provider: postgres
+    data_provider_profile: default
+    dynamic: true
+    export_write_policy: append
+    file_path: transformers/fan_products_html_superseis.py
+    file_source:
+      path: transformers/fan_products_html_superseis.py
+  downstream_blocks:
+  - transform_products_html_to_products_superseis
+  executor_config: null
+  executor_type: local_python
+  has_callback: false
+  language: python
+  name: fan_products_html_superseis
+  retry_config: null
+  status: executed
+  timeout: null
+  type: transformer
+  upstream_blocks:
+  - extract_products_html_superseis
+  uuid: fan_products_html_superseis
+- all_upstream_blocks_executed: true
+  color: null
+  configuration: {}
+  downstream_blocks:
+  - load_products_superseis
+  executor_config: null
+  executor_type: local_python
+  has_callback: false
+  language: python
+  name: transform_products_html_to_products_superseis
+  retry_config: null
+  status: executed
+  timeout: null
+  type: transformer
+  upstream_blocks:
+  - fan_products_html_superseis
+  uuid: transform_products_html_to_products_superseis
+- all_upstream_blocks_executed: true
+  color: null
+  configuration: {}
+  downstream_blocks: []
+  executor_config: null
+  executor_type: local_python
+  has_callback: false
+  language: python
+  name: load_products_superseis
+  retry_config: null
+  status: executed
+  timeout: null
+  type: data_exporter
+  upstream_blocks:
+  - transform_products_html_to_products_superseis
+  uuid: load_products_superseis
+cache_block_output_in_memory: false
+callbacks: []
+concurrency_config: {}
+conditionals: []
+created_at: '2025-04-19 23:22:01.169565+00:00'
+data_integration: null
+description: Exrtact products from raw html
+executor_config: {}
+executor_count: 1
+executor_type: null
+extensions: {}
+name: scrape_products_superseis
+notification_config: {}
+remote_variables_dir: null
+retry_config: {}
+run_pipeline_in_one_process: false
+settings:
+  triggers: null
+spark_config: {}
+tags:
+- superseis
+type: python
+uuid: scrape_products_superseis
+variables_dir: /app/my-project
+widgets: []

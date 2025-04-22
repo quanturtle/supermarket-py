@@ -1,1 +1,0 @@
-SELECT * FROM supermarkets where "name" LIKE 'Biggie';

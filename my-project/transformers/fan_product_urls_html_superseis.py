@@ -1,4 +1,6 @@
+import os
 import pandas as pd
+import redis
 
 
 if 'transformer' not in globals():
@@ -11,18 +13,23 @@ if 'test' not in globals():
 def transform(data: pd.DataFrame, *args, **kwargs):
     data.drop_duplicates(subset='url', keep='first', inplace=True)
 
-    product_urls = []
+    product_urls_html = []
     metadata = []
 
     for idx, row in data.iterrows():
-        product_urls.append({
+        product_urls_html.append({
             'id': idx,
+            'html': row['html'],
             'url': row['url'],
             'supermarket_id': row['supermarket_id']
         })
+        
+        metadata.append({
+            'block_uuid': f'visiting_{row["url"]}'
+        })
 
     return [
-        product_urls,
+        product_urls_html,
         metadata
     ]
 

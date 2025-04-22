@@ -53,7 +53,7 @@ concurrency_config: {}
 conditionals: []
 created_at: '2025-04-03 18:17:20.756055+00:00'
 data_integration: null
-description: drops all tables and recreates them
+description: Drops all tables and recreates them
 executor_config: {}
 executor_count: 1
 executor_type: null

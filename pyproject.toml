@@ -143,7 +143,7 @@ dependencies = [
     "pyyaml==6.0.2",
     "pyzmq==26.3.0",
     "rapidfuzz==3.12.2",
-    "redis==5.0.8",
+    "redis[asyncio]>=5.0.8",
     "referencing==0.36.2",
     "requests==2.31.0",
     "rfc3339-validator==0.1.4",

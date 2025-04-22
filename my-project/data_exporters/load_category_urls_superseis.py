@@ -18,8 +18,6 @@ def export_data(data: pd.DataFrame, *args, **kwargs):
 
     pipeline = redis_conn.pipeline()
 
-    data['created_at'] = data['created_at'].apply(lambda x: x.isoformat())
-
     for idx, category_url in data.iterrows():
         pipeline.xadd(STREAM_NAME, {'data': json.dumps(category_url.to_dict())})
 

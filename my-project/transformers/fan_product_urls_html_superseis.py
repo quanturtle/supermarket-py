@@ -25,7 +25,7 @@ def transform(data: pd.DataFrame, *args, **kwargs):
         })
         
         metadata.append({
-            'block_uuid': f'visiting_{row["url"]}'
+            'block_uuid': f'visiting_{idx}'
         })
 
     return [

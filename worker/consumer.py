@@ -39,6 +39,7 @@ REDIS_HOST = os.getenv("REDIS_HOST", "localhost")
 REDIS_PORT = int(os.getenv("REDIS_PORT", 6379))
 BATCH_SIZE = int(os.getenv("CONSUMER_BATCH_SIZE", "100"))
 BLOCK_MS = int(os.getenv("CONSUMER_BLOCK_MS", "5000"))
+MAX_STREAM_LENGTH = int(os.getenv("MAX_STREAM_LENGTH", 10_000))
 
 redis_conn = redis.Redis(host=REDIS_HOST, port=REDIS_PORT, decode_responses=True)
 
@@ -127,6 +128,16 @@ async def process_messages(consumer_name: str, messages: List, logger: logging.L
         except Exception:
             logger.exception(f"Failed to ACK {len(ids_to_ack)} messages.")
 
+    try:
+        for stream in STREAM_MODEL_MAP.keys():
+            trimmed = await redis_conn.xtrim(stream, maxlen=MAX_STREAM_LENGTH, approximate=False)
+            
+            if trimmed:
+                logger.debug(f"XTRIM {stream}: removed {trimmed} old entries.")
+    
+    except Exception:
+        logger.exception("Failed to XTRIM stream(s).")
+
     return total_inserted
 
 
@@ -148,6 +159,7 @@ async def run_worker(consumer_name: str, shutdown_event: asyncio.Event):
                     count=BATCH_SIZE,
                     block=BLOCK_MS,
                 )
+                
                 if response:
                     await process_messages(consumer_name, response, logger)
 

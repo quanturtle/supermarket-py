@@ -1,0 +1,42 @@
+deployment:
+    configuration:
+        name: supermarket
+        description: ""
+        runtime_version: 3.0-1
+        dag_deploy_enabled: true
+        ci_cd_enforcement: false
+        scheduler_size: SMALL
+        is_high_availability: false
+        is_development_mode: true
+        executor: ASTRO
+        scheduler_count: 1
+        workspace_name: data engineering
+        deployment_type: STANDARD
+        cloud_provider: AWS
+        region: us-west-2
+        default_task_pod_cpu: "0.25"
+        default_task_pod_memory: 0.5Gi
+        resource_quota_cpu: "10"
+        resource_quota_memory: 20Gi
+        workload_identity: ""
+    worker_queues: []
+    metadata:
+        deployment_id: cm9vnqtm70av101hvb2iji5uz
+        workspace_id: cm9vn77e00b3d01nlk53np4lb
+        cluster_id: N/A
+        release_name: N/A
+        airflow_version: 3.0.0
+        current_tag: 3.0-1
+        status: HEALTHY
+        created_at: 2025-04-24T17:49:45.514Z
+        updated_at: 2025-04-24T17:49:45.514Z
+        deployment_url: cloud.astronomer.io/cm9vn77e00b3d01nlk53np4lb/deployments/cm9vnqtm70av101hvb2iji5uz/overview
+        webserver_url: cm9vn75w80b3601nl1iv3fwec.astronomer.run/d2iji5uz?orgId=org_bLFOpv6c2tRMDOA4
+        airflow_api_url: cm9vn75w80b3601nl1iv3fwec.astronomer.run/d2iji5uz/api/v2
+    alert_emails:
+        - 56.faller_prudent@icloud.com
+    hibernation_schedules:
+        - hibernate_at: 0 17 * * 1-5
+          wake_at: 0 9 * * 1-5
+          description: Hibernate on UTC non-business hours
+

@@ -1,1 +1,0 @@
-SELECT create_hypertable('products', by_range('created_at'));

@@ -5,7 +5,16 @@ A project that scrapes data from paraguayan supermarkets.
 * Frontend (`next.js`)
 * Backend (`fastapi`)
 * DB (`postgres`)
-* Pipeline (`mage.ai`)
+* Pipeline (`airflow`)
+
+```mermaid
+graph LR
+    X[User] --> A[Frontend]
+    A --> B[Backend]
+    B --> C[Database]
+    D[Airflow] --> C
+
+```
 
 ## Screenshots
 
@@ -42,8 +51,6 @@ POSTGRES_DB='supermarket'
 BACKEND_PORT='8000'
 FRONTEND_URL='something.com'
 
-MAGE_DATA_DIR='/app'
-LOCAL_MAGE_DATA_DIR='/home/user/your/directory'
 PIPELINE_HOST='localhost'
 PIPELINE_PORT='6789'
 ```

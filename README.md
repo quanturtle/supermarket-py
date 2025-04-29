@@ -11,8 +11,9 @@ A project that scrapes data from paraguayan supermarkets.
 graph LR
     X[User] --> A[Frontend]
     A --> B[Backend]
-    B --> C[Database]
+    B --> C[Workers]
     D[Airflow] --> C
+    C --> E[Database]
 
 ```
 

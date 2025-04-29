@@ -37,6 +37,6 @@ app.include_router(catalog_router)
 app.include_router(products_router)
 app.include_router(inflation_router)
 
-
+# TODO: change entrypoint
 if __name__ == '__main__':
     uvicorn.run('main:app', host='localhost', port=8000, reload=True)

@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, status
 from sqlmodel import Session, select
-from models import Product, Supermarket, get_session
+from models import Product, get_session
 
 
 router = APIRouter(prefix="", tags=["catalog"])

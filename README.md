@@ -71,6 +71,12 @@ docker compose -f docker-compose-dev.yaml build && docker compose -f docker-comp
 docker compose -f docker-compose-prod.yaml build && docker compose -f docker-compose-prod.yaml up
 ```
 
+```sh
+# run pipeline
+cd pipeline/
+astro dev start
+```
+
 ## TODO:
 * Upgrade containers to use `UV`
 

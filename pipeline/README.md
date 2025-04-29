@@ -1,45 +1,105 @@
-Overview
-========
+# Pipeline - Airflow
 
-Welcome to Astronomer! This project was generated after you ran 'astro dev init' using the Astronomer CLI. This readme describes the contents of the project, as well as how to run Apache Airflow on your local machine.
+Start development server:
+```sh
+astro dev start
+```
 
-Project Contents
-================
+## Architecture
+* `Category URLs`
+    * www.superseis.com.py/categories/3-almacen
+* `Product URLs`
+    * www.superseis.com.py/products/banana
+* `Products`
+    * `{"description": "banana", "price": 3500, "sku": 004123412}`
 
-Your Astro project contains the following files and folders:
+```mermaid
+flowchart LR
+    direction LR
+    subgraph Category URLs
+        direction LR
+        A[Category URLs HTML] --> B[Category URLs]
+    end
+    subgraph Product URLs
+        direction LR
+        C[Product URLs HTML] --> D[Product URLs]
+    end
+    subgraph Products
+        direction LR
+        E[Products HTML] --> F[Products]
+    end
+    
+    X[Supermarkets] --> A
+    B --> C
+    D --> E
+```
 
-- dags: This folder contains the Python files for your Airflow DAGs. By default, this directory includes one example DAG:
-    - `example_astronauts`: This DAG shows a simple ETL pipeline example that queries the list of astronauts currently in space from the Open Notify API and prints a statement for each astronaut. The DAG uses the TaskFlow API to define tasks in Python, and dynamic task mapping to dynamically print a statement for each astronaut. For more on how this DAG works, see our [Getting started tutorial](https://www.astronomer.io/docs/learn/get-started-with-airflow).
-- Dockerfile: This file contains a versioned Astro Runtime Docker image that provides a differentiated Airflow experience. If you want to execute other commands or overrides at runtime, specify them here.
-- include: This folder contains any additional files that you want to include as part of your project. It is empty by default.
-- packages.txt: Install OS-level packages needed for your project by adding them to this file. It is empty by default.
-- requirements.txt: Install Python packages needed for your project by adding them to this file. It is empty by default.
-- plugins: Add custom or community plugins for your project to this file. It is empty by default.
-- airflow_settings.yaml: Use this local-only file to specify Airflow Connections, Variables, and Pools instead of entering them in the Airflow UI as you develop DAGs in this project.
+## Redis Broker
+Create a new connection:
+```python
+broker = Broker(redis_connection_id='my-redis')
+broker.create_connection()
+```
 
-Deploy Your Project Locally
-===========================
+Create a new `xgroup` to write to:
+```python
+stream_name = 'transform_category_urls_stream'
+group_name = 'product_db_inserters'
 
-Start Airflow on your local machine by running 'astro dev start'.
+broker.create_xgroup(stream_name, group_name)
+```
 
-This command will spin up five Docker containers on your machine, each for a different Airflow component:
+Read from `xgroup`:
+```python
+consumer_name = 'transformer'
+broker.read(stream_name, group_name, consumer_name, 20, 1_000)
+```
 
-- Postgres: Airflow's Metadata Database
-- Scheduler: The Airflow component responsible for monitoring and triggering tasks
-- DAG Processor: The Airflow component responsible for parsing DAGs
-- API Server: The Airflow component responsible for serving the Airflow UI and API
-- Triggerer: The Airflow component responsible for triggering deferred tasks
+Write single entry `xgroup`:
+```python
+product_1 = {
+    'supermarket_id': 1,
+    'description': 'coca cola',
+    'sku': '21341234',
+    'price': 22,
+    'url': 'hello.com',
+    'created_at': datetime.now().isoformat()
+}
 
-When all five containers are ready the command will open the browser to the Airflow UI at http://localhost:8080/. You should also be able to access your Postgres Database at 'localhost:5432/postgres' with username 'postgres' and password 'postgres'.
+# single entry
+broker.write(stream_name, product_1)
+```
 
-Note: If you already have either of the above ports allocated, you can either [stop your existing Docker containers or change the port](https://www.astronomer.io/docs/astro/cli/troubleshoot-locally#ports-are-not-available-for-my-local-airflow-webserver).
+Write multiple entries to `xgroup`:
+```python
+product_2 = {
+    'supermarket_id': 1,
+    'description': 'coca cola',
+    'sku': '21341234',
+    'price': 22,
+    'url': 'hello.com',
+    'created_at': datetime.now().isoformat()
+}
 
-Deploy Your Project to Astronomer
-=================================
+# use pipeline
+products = [product_1, product_2]
+broker.write_pipeline(stream_name, *products)
+```
 
-If you have an Astronomer account, pushing code to a Deployment on Astronomer is simple. For deploying instructions, refer to Astronomer documentation: https://www.astronomer.io/docs/astro/deploy-code/
-
-Contact
-=======
-
-The Astronomer CLI is maintained with love by the Astronomer team. To report a bug or suggest a change, reach out to our support.
+## Database
+Check database counts:
+```sql
+SELECT 'supermarkets' AS 'table_name', count(*) FROM supermarkets
+UNION ALL
+SELECT 'category_urls_html', count(*) FROM category_urls_html
+UNION ALL
+SELECT 'category_urls', count(*) FROM category_urls
+UNION ALL
+SELECT 'product_urls_html', count(*) FROM product_urls_html 
+UNION ALL
+SELECT 'product_urls', count(*) FROM product_urls 
+UNION ALL
+SELECT 'products_html', count(*) FROM products_html 
+UNION ALL
+SELECT 'products', count(*) FROM products;
+```

@@ -75,23 +75,6 @@ services:
       timeout: 30s
       retries: 5
       start_period: 15s
-
-  pipeline:
-    build:
-      context: ./pipeline
-      dockerfile: Dockerfile
-    container_name: supermarket-pipeline
-    restart: always
-    command: ["astro", "dev", "start"]
-    volumes:
-      - ./pipeline/dags:/usr/local/airflow/dags
-      - ./pipeline/logs:/usr/local/airflow/logs
-      - ./pipeline/plugins:/usr/local/airflow/plugins
-    ports:
-      - "${AIRFLOW_PORT:-8080}:8080"
-    depends_on:
-      - db
-      - redis
       
 volumes:
   postgres_data:

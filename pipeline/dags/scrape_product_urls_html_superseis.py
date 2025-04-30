@@ -52,7 +52,7 @@ def scrape_product_urls_html_superseis():
         hook = PostgresHook(postgres_conn_id=POSTGRES_CONN_ID)
 
         sql = '''
-            SELECT supermarket_id, distinct(url)
+            SELECT supermarket_id, url
             FROM category_urls
             WHERE supermarket_id = 1
             ORDER BY created_at;

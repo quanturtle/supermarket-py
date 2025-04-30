@@ -77,6 +77,35 @@ cd pipeline/
 astro dev start
 ```
 
+## Important concepts
+
+```mermaid
+flowchart LR
+    direction LR
+    subgraph Category URLs
+        direction LR
+        A[Category URLs HTML] --> B[Category URLs]
+    end
+    subgraph Product URLs
+        direction LR
+        C[Product URLs HTML] --> D[Product URLs]
+    end
+    subgraph Products
+        direction LR
+        E[Products HTML] --> F[Products]
+    end
+    
+    X[Supermarkets] --> A
+    B --> C
+    D --> E
+```
+
+* `supermarkets`: table containing supermarket metadata
+* `category_urls`: container with links to each category in the site
+* `product_urls`: equivalent to a product list, go to each category page extract elements and go to next pagination link
+* `products`: product information
+
+
 ## TODO:
 * Upgrade containers to use `UV`
 

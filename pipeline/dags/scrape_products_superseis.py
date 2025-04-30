@@ -118,7 +118,7 @@ def scrape_products_superseis():
                         'created_at': datetime.now().isoformat()
                     }
                     
-                    my_broker.ack(TRANSFORM_STREAM_NAME, GROUP_NAME, *[product['entry_id']])
+                    my_broker.ack(TRANSFORM_STREAM_NAME, GROUP_NAME, *[product_html['entry_id']])
                     my_broker.write(OUTPUT_STREAM_NAME, product)
                 
                     continue
@@ -150,7 +150,7 @@ def scrape_products_superseis():
                             PRODUCT_PRICE_TAG[1], class_=PRODUCT_PRICE_CLASS[1]
                         ).text.strip()
                         product_price = ''.join(filter(str.isdigit, product_price_span))
-                        product_price = int(product_price) if product_price else None
+                        product_price = int(product_price) if product_price else 0
                     
                     else:
                         product_price = None

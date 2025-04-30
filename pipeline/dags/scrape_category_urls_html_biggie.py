@@ -102,7 +102,6 @@ def scrape_category_urls_html_biggie():
                     'created_at': datetime.now().isoformat(),
                 }
                 
-                # print(category_urls_html)
                 my_broker.ack(TRANSFORM_STREAM_NAME, GROUP_NAME, *[supermarket['entry_id']])
                 my_broker.write(OUTPUT_STREAM_NAME, category_urls_html)
 

@@ -51,7 +51,7 @@ def supermarket_biggie_scrape_category_urls_html():
             SELECT id, api_url
             FROM supermarkets
             WHERE name LIKE '{SUPERMARKET_NAME}'
-            LIMIT 1;
+            ORDER BY created_at;
         '''
 
         result = hook.get_first(sql)

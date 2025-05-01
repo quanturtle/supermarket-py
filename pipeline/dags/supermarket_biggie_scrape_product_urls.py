@@ -94,7 +94,9 @@ def supermarket_biggie_scrape_product_urls():
                 for item in product_urls_html:
                     url_suffix = item['name'].replace('.', '') \
 				                .replace(' ', '-') \
-				                .replace('´', '') \
+				                .replace('/', '-') \
+                                .replace('´', '') \
+                                .replace('%', '') \
                                 .replace('‘', '\'') \
                                 .lower() + '-' + item['code']
                     

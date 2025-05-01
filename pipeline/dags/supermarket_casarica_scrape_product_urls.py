@@ -18,7 +18,7 @@ DEFAULT_ARGS = {
 POSTGRES_CONN_ID = 'my-db'
 REDIS_CONN_ID = 'my-redis'
 OUTPUT_STREAM_NAME = 'product_urls_stream'
-TRANSFORM_STREAM_NAME = 'transform_product_urls_stream'
+TRANSFORM_STREAM_NAME = 'casarica_transform_product_urls_stream'
 GROUP_NAME = 'product_db_inserters'
 CONSUMER_NAME = 'transformer'
 

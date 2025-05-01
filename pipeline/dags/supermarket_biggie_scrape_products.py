@@ -1,13 +1,10 @@
 '''
-DAG: scrape_products_biggie
+DAG: supermarket_biggie_scrape_products
 PRODUCTS_HTML --> PRODUCTS
 '''
 import json
 import broker
 from datetime import datetime
-from requests.exceptions import RequestException
-from redis import RedisError
-from redis.exceptions import ResponseError
 from airflow.decorators import dag, task
 from airflow.exceptions import AirflowNotFoundException
 from airflow.providers.redis.hooks.redis import RedisHook
@@ -27,6 +24,7 @@ TRANSFORM_STREAM_NAME = 'transform_products_stream'
 GROUP_NAME = 'product_db_inserters'
 CONSUMER_NAME = 'transformer'
 
+SUPERMARKET_ID = 3
 
 PRODUCT_NAME = 'name'
 PRODUCT_SKU = 'code'
@@ -38,7 +36,7 @@ PRODUCT_PRICE = 'price'
     tags=['biggie', 'etl'],
     catchup=False,
 )
-def scrape_products_biggie():
+def supermarket_biggie_scrape_products():
     @task()
     def setup_transform_stream():
         my_broker = broker.Broker(redis_connection_id=REDIS_CONN_ID)
@@ -53,10 +51,10 @@ def scrape_products_biggie():
     def extract_products_html():
         hook = PostgresHook(postgres_conn_id=POSTGRES_CONN_ID)
 
-        sql = '''
+        sql = f'''
             SELECT supermarket_id, html, url
             FROM product_urls_html
-            WHERE supermarket_id = 3
+            WHERE supermarket_id = {SUPERMARKET_ID}
             ORDER BY created_at;
         '''
 
@@ -129,4 +127,4 @@ def scrape_products_biggie():
     setup >> extract >> transform
 
 
-scrape_products_biggie()
+supermarket_biggie_scrape_products()

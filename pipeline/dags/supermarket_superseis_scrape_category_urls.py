@@ -1,15 +1,13 @@
 '''
-DAG: scrape_category_urls_html_biggie
-SUPERMARKETS --> CATEGORY_URLS_HTML
+DAG: supermarket_superseis_scrape_category_urls
+CATEGORY_URLS_HTML --> CATEGORY_URLS
 '''
-from datetime import datetime
-import json
 import broker
-from requests.exceptions import RequestException
-from redis.exceptions import ResponseError
+from datetime import datetime
 from airflow.decorators import dag, task
 from airflow.exceptions import AirflowNotFoundException
 from airflow.providers.postgres.hooks.postgres import PostgresHook
+from bs4 import BeautifulSoup
 
 
 DEFAULT_ARGS = {
@@ -24,12 +22,17 @@ TRANSFORM_STREAM_NAME = 'transform_category_urls_stream'
 GROUP_NAME = 'product_db_inserters'
 CONSUMER_NAME = 'transformer'
 
+SUPERMARKET_ID = 1
+
+CATEGORY_STRING_IN_URL = 'category'
+
+
 @dag(
     default_args=DEFAULT_ARGS,
-    tags=['biggie', 'etl'],
+    tags=['superseis', 'etl'],
     catchup=False,
 )
-def scrape_category_urls_biggie():
+def supermarket_superseis_scrape_category_urls():
     @task()
     def setup_transform_stream():
         my_broker = broker.Broker(redis_connection_id=REDIS_CONN_ID)
@@ -39,14 +42,15 @@ def scrape_category_urls_biggie():
 
         return
     
+
     @task()
     def extract_category_urls_html():
         hook = PostgresHook(postgres_conn_id=POSTGRES_CONN_ID)
 
-        sql = '''
+        sql = f'''
             SELECT supermarket_id, html, url
             FROM category_urls_html
-            WHERE supermarket_id = 3
+            WHERE supermarket_id = {SUPERMARKET_ID}
             ORDER BY created_at
             LIMIT 1;
         '''
@@ -54,7 +58,7 @@ def scrape_category_urls_biggie():
         result = hook.get_first(sql)
 
         if not result:
-            raise AirflowNotFoundException('No Biggie row found in `supermarkets` table.')
+            raise AirflowNotFoundException('No category URLs found for Superseis in `category_urls_html` table.')
 
         my_broker = broker.Broker(redis_connection_id=REDIS_CONN_ID)
         my_broker.create_connection()
@@ -80,29 +84,21 @@ def scrape_category_urls_biggie():
                 break
         
             for category_urls_html in batch:
-                try:
-                    api_response = json.loads(category_urls_html['html'])
-                    api_items = api_response['items']
-                except:
-                    print('Error loading json from supermarkets')
-
+                soup = BeautifulSoup(category_urls_html['html'], 'html.parser')
+                links = soup.find_all('a', href=True)
+                
                 category_urls = []
                 
-                LIMIT = 50
-                OFFSET = 0
-
-                for item in api_items:
-                    slug = item['slug'].strip()
-                    url_with_slug = f'https://api.app.biggie.com.py/api/articles?take={LIMIT}&skip={OFFSET}&classificationName={slug}'
-
-                    category_url = {
-                        'supermarket_id': category_urls_html['supermarket_id'],
-                        'description': item['name'],
-                        'url': url_with_slug,
-                        'created_at': datetime.now().isoformat()
-                    }
-                
-                    category_urls.append(category_url)
+                for link in links:
+                    if link['href'] != '#' and CATEGORY_STRING_IN_URL in link['href']:
+                        category_url = {
+                            'supermarket_id': category_urls_html['supermarket_id'],
+                            'description': link.get_text(strip=True),
+                            'url': link['href'],
+                            'created_at': datetime.now().isoformat()
+                        }
+                        
+                        category_urls.append(category_url)
 
                 my_broker.ack(TRANSFORM_STREAM_NAME, GROUP_NAME, *[category_urls_html['entry_id']])
                 my_broker.write_pipeline(OUTPUT_STREAM_NAME, *category_urls)
@@ -117,4 +113,4 @@ def scrape_category_urls_biggie():
     setup >> extract >> transform
 
 
-scrape_category_urls_biggie()
+supermarket_superseis_scrape_category_urls()

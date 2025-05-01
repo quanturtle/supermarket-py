@@ -1,12 +1,11 @@
 '''
-DAG: scrape_category_urls_html_superseis
+DAG: supermarket_casarica_scrape_category_urls_html
 SUPERMARKETS --> CATEGORY_URLS_HTML
 '''
 from datetime import datetime
 import requests
 import broker
 from requests.exceptions import RequestException
-from redis.exceptions import ResponseError
 from airflow.decorators import dag, task
 from airflow.exceptions import AirflowNotFoundException
 from airflow.providers.postgres.hooks.postgres import PostgresHook
@@ -24,12 +23,18 @@ TRANSFORM_STREAM_NAME = 'transform_category_urls_html_stream'
 GROUP_NAME = 'product_db_inserters'
 CONSUMER_NAME = 'transformer'
 
+SUPERMARKET_NAME = 'Casa Rica'
+
+BATCH_SIZE = 20
+BLOCK_TIME_MS = 1_000
+
+
 @dag(
     default_args=DEFAULT_ARGS,
-    tags=['superseis', 'etl'],
+    tags=['casarica', 'etl'],
     catchup=False,
 )
-def scrape_category_urls_html_superseis():
+def supermarket_casarica_scrape_category_urls_html():
     @task()
     def setup_transform_stream():
         my_broker = broker.Broker(redis_connection_id=REDIS_CONN_ID)
@@ -43,17 +48,17 @@ def scrape_category_urls_html_superseis():
     def extract_supermarkets():
         hook = PostgresHook(postgres_conn_id=POSTGRES_CONN_ID)
 
-        sql = '''
+        sql = f'''
             SELECT id, category_urls_container_url
             FROM supermarkets
-            WHERE name LIKE 'Superseis'
+            WHERE name LIKE '{SUPERMARKET_NAME}'
             LIMIT 1;
         '''
 
         result = hook.get_first(sql)
 
         if not result:
-            raise AirflowNotFoundException('No Superseis row found in `supermarkets` table.')
+            raise AirflowNotFoundException('No casarica row found in `supermarkets` table.')
 
         my_broker = broker.Broker(redis_connection_id=REDIS_CONN_ID)
         my_broker.create_connection()
@@ -72,7 +77,7 @@ def scrape_category_urls_html_superseis():
         my_broker.create_connection()
 
         while True:
-            batch = my_broker.read(TRANSFORM_STREAM_NAME, GROUP_NAME, CONSUMER_NAME, batch_size=20, block_time_ms=5_000)
+            batch = my_broker.read(TRANSFORM_STREAM_NAME, GROUP_NAME, CONSUMER_NAME, batch_size=BATCH_SIZE, block_time_ms=BLOCK_TIME_MS)
         
             if batch is None:
                 break
@@ -114,4 +119,4 @@ def scrape_category_urls_html_superseis():
     setup >> extract >> transform
 
 
-scrape_category_urls_html_superseis()
+supermarket_casarica_scrape_category_urls_html()

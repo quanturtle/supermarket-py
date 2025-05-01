@@ -1,17 +1,13 @@
 '''
-DAG: scrape_product_urls_superseis
+DAG: supermarket_biggie_scrape_product_urls
 PRODUCT_URLS_HTML --> PRODUCT_URLS
 '''
 from datetime import datetime
+import json
 import broker
-from requests.exceptions import RequestException
-from redis import RedisError
-from redis.exceptions import ResponseError
 from airflow.decorators import dag, task
 from airflow.exceptions import AirflowNotFoundException
-from airflow.providers.redis.hooks.redis import RedisHook
 from airflow.providers.postgres.hooks.postgres import PostgresHook
-from bs4 import BeautifulSoup
 
 
 DEFAULT_ARGS = {
@@ -26,17 +22,15 @@ TRANSFORM_STREAM_NAME = 'transform_product_urls_stream'
 GROUP_NAME = 'product_db_inserters'
 CONSUMER_NAME = 'transformer'
 
-PRODUCT_STRING_IN_URL = 'products'
-# superseis
-SUPERMARKET_ID = 1
+SUPERMARKET_ID = 3
 
 
 @dag(
     default_args=DEFAULT_ARGS,
-    tags=['superseis', 'etl'],
+    tags=['biggie', 'etl'],
     catchup=False,
 )
-def scrape_product_urls_superseis():
+def supermarket_biggie_scrape_product_urls():
     @task()
     def setup_transform_stream():
         my_broker = broker.Broker(redis_connection_id=REDIS_CONN_ID)
@@ -54,13 +48,14 @@ def scrape_product_urls_superseis():
         sql = f'''
             SELECT supermarket_id, html, url
             FROM product_urls_html
-            WHERE supermarket_id = {SUPERMARKET_ID};
+            WHERE supermarket_id = {SUPERMARKET_ID}
+            LIMIT 1;
         '''
 
         results = hook.get_records(sql)
 
         if not results:
-            raise AirflowNotFoundException('No product URLs HTML found for Superseis in `product_urls_html` table.')
+            raise AirflowNotFoundException('No product URLs HTML found for biggie in `product_urls_html` table.')
 
         my_broker = broker.Broker(redis_connection_id=REDIS_CONN_ID)
         my_broker.create_connection()
@@ -91,25 +86,28 @@ def scrape_product_urls_superseis():
                 break
 
             for product_url_html in batch:
-                soup = BeautifulSoup(product_url_html['html'], 'html.parser')
-
-                links = soup.find_all('a', href=True)
+                product_urls_html = json.loads(product_url_html['html'])
 
                 product_urls = []
 
-                for link in links:
-                    if (PRODUCT_STRING_IN_URL in link['href'].lower()) and (link.get_text(strip=True) != ''):
-                        product_url = {
-                            'supermarket_id': product_url_html['supermarket_id'],
-                            'description': link.get_text(strip=True),
-                            'url': link['href'],
-                            'created_at': datetime.now().isoformat()
-                        }
-                        
-                        product_urls.append(product_url)
+                for item in product_urls_html:
+                    url_suffix = item['name'].replace('.', '') \
+				                .replace(' ', '-') \
+				                .replace('´', '') \
+                                .replace('‘', '\'') \
+                                .lower() + '-' + item['code']
+                    
+                    product_url = {
+                        'supermarket_id': product_url_html['supermarket_id'],
+                        'description': item['name'].strip().upper(),
+                        'url': f'https://biggie.com.py/item/{url_suffix}',
+                        'created_at': datetime.now().isoformat()
+                    }
 
-                my_broker.ack(TRANSFORM_STREAM_NAME, GROUP_NAME, *[product_url_html['entry_id']])
-                my_broker.write_pipeline(OUTPUT_STREAM_NAME, *product_urls)
+                    product_urls.append(product_url)
+
+            my_broker.ack(TRANSFORM_STREAM_NAME, GROUP_NAME, *[product_url_html['entry_id']])
+            my_broker.write_pipeline(OUTPUT_STREAM_NAME, *product_urls)
 
         return
 
@@ -121,4 +119,4 @@ def scrape_product_urls_superseis():
     setup >> extract >> transform
 
 
-scrape_product_urls_superseis()
+supermarket_biggie_scrape_product_urls()

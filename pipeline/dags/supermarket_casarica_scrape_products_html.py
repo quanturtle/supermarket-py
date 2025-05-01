@@ -1,15 +1,13 @@
 '''
-DAG: scrape_products_html_casarica
+DAG: supermarket_casarica_scrape_products_html
 PRODUCT_URLS --> PRODUCTS_HTML
 '''
 import broker
 from datetime import datetime
 import requests
 from requests.exceptions import RequestException
-from redis import RedisError
 from airflow.decorators import dag, task
 from airflow.exceptions import AirflowNotFoundException
-from airflow.providers.redis.hooks.redis import RedisHook
 from airflow.providers.postgres.hooks.postgres import PostgresHook
 import time
 
@@ -26,13 +24,15 @@ TRANSFORM_STREAM_NAME = 'transform_products_html_stream'
 GROUP_NAME = 'product_db_inserters'
 CONSUMER_NAME = 'transformer'
 
+SUPERMARKET_ID = 5
+
 
 @dag(
     default_args=DEFAULT_ARGS,
     tags=['casarica', 'etl'],
     catchup=False,
 )
-def scrape_products_html_casarica():
+def supermarket_casarica_scrape_products_html():
     @task()
     def setup_transform_stream():
         my_broker = broker.Broker(redis_connection_id=REDIS_CONN_ID)
@@ -47,10 +47,10 @@ def scrape_products_html_casarica():
     def extract_product_urls():
         hook = PostgresHook(postgres_conn_id=POSTGRES_CONN_ID)
 
-        sql = '''
+        sql = f'''
             SELECT supermarket_id, url
             FROM product_urls
-            WHERE supermarket_id = 5
+            WHERE supermarket_id = {SUPERMARKET_ID}
             LIMIT 1;
         '''
 
@@ -119,4 +119,4 @@ def scrape_products_html_casarica():
     setup >> extract >> transform
 
 
-scrape_products_html_casarica()
+supermarket_casarica_scrape_products_html()

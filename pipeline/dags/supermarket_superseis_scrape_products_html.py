@@ -1,8 +1,7 @@
 '''
-DAG: scrape_products_html_biggie
+DAG: supermarket_superseis_scrape_products_html
 PRODUCT_URLS --> PRODUCTS_HTML
 '''
-import json
 import broker
 from datetime import datetime
 import requests
@@ -27,13 +26,18 @@ TRANSFORM_STREAM_NAME = 'transform_products_html_stream'
 GROUP_NAME = 'product_db_inserters'
 CONSUMER_NAME = 'transformer'
 
+SUPERMARKET_ID = 1
+BATCH_SIZE = 20
+BLOCK_TIME_MS = 1_000
+DELAY_SECONDS = 0.5
+
 
 @dag(
     default_args=DEFAULT_ARGS,
-    tags=['biggie', 'etl'],
+    tags=['superseis', 'etl'],
     catchup=False,
 )
-def scrape_products_html_biggie():
+def supermarket_superseis_scrape_products_html():
     @task()
     def setup_transform_stream():
         my_broker = broker.Broker(redis_connection_id=REDIS_CONN_ID)
@@ -51,14 +55,14 @@ def scrape_products_html_biggie():
         sql = f'''
             SELECT supermarket_id, url
             FROM product_urls
-            WHERE supermarket_id = 3
+            WHERE supermarket_id = {SUPERMARKET_ID}
             ORDER BY created_at;
         '''
 
         results = hook.get_records(sql)
 
         if not results:
-            raise AirflowNotFoundException('No product URLs found for biggie in `product_urls` table.')
+            raise AirflowNotFoundException('No product URLs found for Superseis in `product_urls` table.')
 
         my_broker = broker.Broker(redis_connection_id=REDIS_CONN_ID)
         my_broker.create_connection()
@@ -82,18 +86,19 @@ def scrape_products_html_biggie():
         my_broker.create_connection()
 
         while True:
-            batch = my_broker.read(TRANSFORM_STREAM_NAME, GROUP_NAME, CONSUMER_NAME, batch_size=20, block_time_ms=5_000)        
+            batch = my_broker.read(TRANSFORM_STREAM_NAME, GROUP_NAME, CONSUMER_NAME, batch_size=BATCH_SIZE, block_time_ms=BLOCK_TIME_MS)        
         
             if batch is None:
                 break
 
             for product_url in batch:
                 try:
-                    time.sleep(0.5)
+                    time.sleep(DELAY_SECONDS)
+                    
                     response = requests.get(product_url['url'], timeout=30)
                     response.raise_for_status()
                     html_content = response.text
-
+                    
                     product_html = {
                         'supermarket_id': product_url['supermarket_id'],
                         'html': html_content,
@@ -119,4 +124,4 @@ def scrape_products_html_biggie():
     setup >> extract >> transform
 
 
-scrape_products_html_biggie()
+supermarket_superseis_scrape_products_html()

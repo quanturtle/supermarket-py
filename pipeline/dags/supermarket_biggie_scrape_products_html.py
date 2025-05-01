@@ -1,12 +1,11 @@
 '''
-DAG: scrape_products_html_superseis
+DAG: supermarket_biggie_scrape_products_html
 PRODUCT_URLS --> PRODUCTS_HTML
 '''
 import broker
 from datetime import datetime
 import requests
 from requests.exceptions import RequestException
-from redis import RedisError
 from airflow.decorators import dag, task
 from airflow.exceptions import AirflowNotFoundException
 from airflow.providers.redis.hooks.redis import RedisHook
@@ -26,13 +25,16 @@ TRANSFORM_STREAM_NAME = 'transform_products_html_stream'
 GROUP_NAME = 'product_db_inserters'
 CONSUMER_NAME = 'transformer'
 
+SUPERMARKET_ID = 3
+DELAY_SECONDS = 0.5
+
 
 @dag(
     default_args=DEFAULT_ARGS,
-    tags=['superseis', 'etl'],
+    tags=['biggie', 'etl'],
     catchup=False,
 )
-def scrape_products_html_superseis():
+def supermarket_biggie_scrape_products_html():
     @task()
     def setup_transform_stream():
         my_broker = broker.Broker(redis_connection_id=REDIS_CONN_ID)
@@ -47,17 +49,17 @@ def scrape_products_html_superseis():
     def extract_product_urls():
         hook = PostgresHook(postgres_conn_id=POSTGRES_CONN_ID)
 
-        sql = '''
+        sql = f'''
             SELECT supermarket_id, url
             FROM product_urls
-            WHERE supermarket_id = 1
+            WHERE supermarket_id = {SUPERMARKET_ID}
             ORDER BY created_at;
         '''
 
         results = hook.get_records(sql)
 
         if not results:
-            raise AirflowNotFoundException('No product URLs found for Superseis in `product_urls` table.')
+            raise AirflowNotFoundException('No product URLs found for biggie in `product_urls` table.')
 
         my_broker = broker.Broker(redis_connection_id=REDIS_CONN_ID)
         my_broker.create_connection()
@@ -88,12 +90,11 @@ def scrape_products_html_superseis():
 
             for product_url in batch:
                 try:
-                    time.sleep(0.5)
-                    
+                    time.sleep(DELAY_SECONDS)
                     response = requests.get(product_url['url'], timeout=30)
                     response.raise_for_status()
                     html_content = response.text
-                    
+
                     product_html = {
                         'supermarket_id': product_url['supermarket_id'],
                         'html': html_content,
@@ -119,4 +120,4 @@ def scrape_products_html_superseis():
     setup >> extract >> transform
 
 
-scrape_products_html_superseis()
+supermarket_biggie_scrape_products_html()

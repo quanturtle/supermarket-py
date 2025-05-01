@@ -1,16 +1,11 @@
 '''
-DAG: scrape_product_urls_biggie
+DAG: supermarket_casarica_scrape_product_urls
 PRODUCT_URLS_HTML --> PRODUCT_URLS
 '''
 from datetime import datetime
-import json
 import broker
-from requests.exceptions import RequestException
-from redis import RedisError
-from redis.exceptions import ResponseError
 from airflow.decorators import dag, task
 from airflow.exceptions import AirflowNotFoundException
-from airflow.providers.redis.hooks.redis import RedisHook
 from airflow.providers.postgres.hooks.postgres import PostgresHook
 from bs4 import BeautifulSoup
 
@@ -27,13 +22,21 @@ TRANSFORM_STREAM_NAME = 'transform_product_urls_stream'
 GROUP_NAME = 'product_db_inserters'
 CONSUMER_NAME = 'transformer'
 
+SUPERMARKET_ID = 5
+
+PRODUCT_CONTAINER_TAG = 'div'
+PRODUCT_CONTAINER_CLASS = 'tab-content'
+
+DESCRIPTION_TAG = 'h2'
+DESCRIPTION_CLASS = 'ecommercepro-loop-product__title'
+
 
 @dag(
     default_args=DEFAULT_ARGS,
-    tags=['biggie', 'etl'],
+    tags=['casarica', 'etl'],
     catchup=False,
 )
-def scrape_product_urls_biggie():
+def supermarket_casarica_scrape_product_urls():
     @task()
     def setup_transform_stream():
         my_broker = broker.Broker(redis_connection_id=REDIS_CONN_ID)
@@ -48,17 +51,17 @@ def scrape_product_urls_biggie():
     def extract_product_urls_html():
         hook = PostgresHook(postgres_conn_id=POSTGRES_CONN_ID)
 
-        sql = '''
+        sql = f'''
             SELECT supermarket_id, html, url
             FROM product_urls_html
-            WHERE supermarket_id = 3
+            WHERE supermarket_id = {SUPERMARKET_ID}
             LIMIT 1;
         '''
 
         results = hook.get_records(sql)
 
         if not results:
-            raise AirflowNotFoundException('No product URLs HTML found for biggie in `product_urls_html` table.')
+            raise AirflowNotFoundException('No product URLs HTML found for casarica in `product_urls_html` table.')
 
         my_broker = broker.Broker(redis_connection_id=REDIS_CONN_ID)
         my_broker.create_connection()
@@ -89,28 +92,27 @@ def scrape_product_urls_biggie():
                 break
 
             for product_url_html in batch:
-                product_urls_html = json.loads(product_url_html['html'])
+                soup = BeautifulSoup(product_url_html['html'], 'html.parser')
+                product_div = soup.find(PRODUCT_CONTAINER_TAG, class_=PRODUCT_CONTAINER_CLASS)
+                
+                links = product_div.find_all('a', href=True)
 
                 product_urls = []
 
-                for item in product_urls_html:
-                    url_suffix = item['name'].replace('.', '') \
-				                .replace(' ', '-') \
-				                .replace('´', '') \
-                                .replace('‘', '\'') \
-                                .lower() + '-' + item['code']
-                    
-                    product_url = {
-                        'supermarket_id': product_url_html['supermarket_id'],
-                        'description': item['name'].strip().upper(),
-                        'url': f'https://biggie.com.py/item/{url_suffix}',
-                        'created_at': datetime.now().isoformat()
-                    }
+                for link in links:
+                    if link['href'] not in ['javascript:void(0);', 'mi-lista']:
+                        description = link.find(DESCRIPTION_TAG, class_=DESCRIPTION_CLASS)
+                        product_url = {
+                            'supermarket_id': product_url_html['supermarket_id'],
+                            'description': description.get_text(strip=True) if description else '',
+                            'url': f'https://www.casarica.com.py/{link['href']}',
+                            'created_at': datetime.now().isoformat()
+                        }
+                        
+                        product_urls.append(product_url)
 
-                    product_urls.append(product_url)
-
-            my_broker.ack(TRANSFORM_STREAM_NAME, GROUP_NAME, *[product_url_html['entry_id']])
-            my_broker.write_pipeline(OUTPUT_STREAM_NAME, *product_urls)
+                my_broker.ack(TRANSFORM_STREAM_NAME, GROUP_NAME, *[product_url_html['entry_id']])
+                my_broker.write_pipeline(OUTPUT_STREAM_NAME, *product_urls)
 
         return
 
@@ -122,4 +124,4 @@ def scrape_product_urls_biggie():
     setup >> extract >> transform
 
 
-scrape_product_urls_biggie()
+supermarket_casarica_scrape_product_urls()

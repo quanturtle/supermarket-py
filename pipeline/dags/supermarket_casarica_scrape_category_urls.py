@@ -1,5 +1,5 @@
 '''
-DAG: scrape_category_urls_superseis
+DAG: supermarket_casarica_scrape_category_urls
 CATEGORY_URLS_HTML --> CATEGORY_URLS
 '''
 import broker
@@ -22,15 +22,19 @@ TRANSFORM_STREAM_NAME = 'transform_category_urls_stream'
 GROUP_NAME = 'product_db_inserters'
 CONSUMER_NAME = 'transformer'
 
-CATEGORY_STRING_IN_URL = 'category'
+SUPERMARKET_ID = 5
+BATCH_SIZE = 20
+BLOCK_TIME_MS = 1_000
+
+CATEGORY_STRING_IN_URL = 'catalogo'
 
 
 @dag(
     default_args=DEFAULT_ARGS,
-    tags=['superseis', 'etl'],
+    tags=['casarica', 'etl'],
     catchup=False,
 )
-def scrape_category_urls_superseis():
+def supermarket_casarica_scrape_category_urls():
     @task()
     def setup_transform_stream():
         my_broker = broker.Broker(redis_connection_id=REDIS_CONN_ID)
@@ -48,7 +52,7 @@ def scrape_category_urls_superseis():
         sql = '''
             SELECT supermarket_id, html, url
             FROM category_urls_html
-            WHERE supermarket_id = 1
+            WHERE supermarket_id = {SUPERMARKET_ID}
             ORDER BY created_at
             LIMIT 1;
         '''
@@ -56,7 +60,7 @@ def scrape_category_urls_superseis():
         result = hook.get_first(sql)
 
         if not result:
-            raise AirflowNotFoundException('No category URLs found for Superseis in `category_urls_html` table.')
+            raise AirflowNotFoundException('No category URLs found for casarica in `category_urls_html` table.')
 
         my_broker = broker.Broker(redis_connection_id=REDIS_CONN_ID)
         my_broker.create_connection()
@@ -76,7 +80,7 @@ def scrape_category_urls_superseis():
         my_broker.create_connection()
 
         while True:
-            batch = my_broker.read(TRANSFORM_STREAM_NAME, GROUP_NAME, CONSUMER_NAME, batch_size=20, block_time_ms=5_000)        
+            batch = my_broker.read(TRANSFORM_STREAM_NAME, GROUP_NAME, CONSUMER_NAME, batch_size=BATCH_SIZE, block_time_ms=BLOCK_TIME_MS)        
         
             if batch is None:
                 break
@@ -88,11 +92,11 @@ def scrape_category_urls_superseis():
                 category_urls = []
                 
                 for link in links:
-                    if link['href'] != '#' and CATEGORY_STRING_IN_URL in link['href']:
+                    if (link['href'] != '#') and (CATEGORY_STRING_IN_URL in link['href']) and (link['href'] != '/catalogos'):
                         category_url = {
                             'supermarket_id': category_urls_html['supermarket_id'],
                             'description': link.get_text(strip=True),
-                            'url': link['href'],
+                            'url': f'https://www.casarica.com.py/{link['href']}',
                             'created_at': datetime.now().isoformat()
                         }
                         
@@ -110,4 +114,4 @@ def scrape_category_urls_superseis():
 
     setup >> extract >> transform
 
-scrape_category_urls_superseis()
+supermarket_casarica_scrape_category_urls()

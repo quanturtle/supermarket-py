@@ -1,16 +1,11 @@
 '''
-DAG: scrape_products_casarica
+DAG: supermarket_superseis_scrape_products
 PRODUCTS_HTML --> PRODUCTS
 '''
-import json
 import broker
 from datetime import datetime
-from requests.exceptions import RequestException
-from redis import RedisError
-from redis.exceptions import ResponseError
 from airflow.decorators import dag, task
 from airflow.exceptions import AirflowNotFoundException
-from airflow.providers.redis.hooks.redis import RedisHook
 from airflow.providers.postgres.hooks.postgres import PostgresHook
 from bs4 import BeautifulSoup
 
@@ -27,27 +22,30 @@ TRANSFORM_STREAM_NAME = 'transform_products_stream'
 GROUP_NAME = 'product_db_inserters'
 CONSUMER_NAME = 'transformer'
 
+SUPERMARKET_ID = 1
+
 PRODUCT_CONTAINER_TAG = 'div'
-PRODUCT_CONTAINER_CLASS = 'single-product-wrapper'
+PRODUCT_CONTAINER_CLASS = 'product-details-info'
 
 PRODUCT_NAME_TAG = 'h1'
-PRODUCT_NAME_CLASS = 'product_title entry-title'
+PRODUCT_NAME_CLASS = 'productname'
+PRODUCT_NAME_ATTRS = {'itemprop': 'name'}
 
-PRODUCT_SKU_TAG = 'span'
+PRODUCT_SKU_TAG = 'div'
 PRODUCT_SKU_CLASS = 'sku'
-PRODUCT_SKU_ATTRS = {'id': 'producto-codigo'}
+PRODUCT_SKU_ATTRS = {'itemprop': 'sku'}
 
-PRODUCT_PRICE_TAG = ['p', 'span']
-PRODUCT_PRICE_CLASS = ['price', 'ecommercepro-Price-amount amount']
-PRODUCT_PRICE_ATTRS = [{}, {'id': 'producto-precio'}]
+PRODUCT_PRICE_TAG = ['div', 'span']
+PRODUCT_PRICE_CLASS = ['price', 'productPrice']
+PRODUCT_PRICE_ATTRS = [{'itemprop': 'price'}, '']
 
 
 @dag(
     default_args=DEFAULT_ARGS,
-    tags=['casarica', 'etl'],
+    tags=['superseis', 'etl'],
     catchup=False,
 )
-def scrape_products_casarica():
+def supermarket_superseis_scrape_products():
     @task()
     def setup_transform_stream():
         my_broker = broker.Broker(redis_connection_id=REDIS_CONN_ID)
@@ -62,17 +60,17 @@ def scrape_products_casarica():
     def extract_products_html():
         hook = PostgresHook(postgres_conn_id=POSTGRES_CONN_ID)
 
-        sql = '''
+        sql = f'''
             SELECT supermarket_id, html, url
             FROM products_html
-            WHERE supermarket_id = 5
-            LIMIT 1;
+            WHERE supermarket_id = {SUPERMARKET_ID}
+            ORDER BY created_at;
         '''
 
         results = hook.get_records(sql)
 
         if not results:
-            raise AirflowNotFoundException('No product HTML content found for casarica in `products_html` table.')
+            raise AirflowNotFoundException('No product HTML content found for Superseis in `products_html` table.')
 
         my_broker = broker.Broker(redis_connection_id=REDIS_CONN_ID)
         my_broker.create_connection()
@@ -124,7 +122,7 @@ def scrape_products_casarica():
 
                 try:        
                     product_description = product_details_container.find(
-                        PRODUCT_NAME_TAG, class_=PRODUCT_NAME_CLASS
+                        PRODUCT_NAME_TAG, class_=PRODUCT_NAME_CLASS, attrs=PRODUCT_NAME_ATTRS
                     ).text.strip().upper()
                 
                 except:
@@ -180,4 +178,4 @@ def scrape_products_casarica():
     setup >> extract >> transform
 
 
-scrape_products_casarica()
+supermarket_superseis_scrape_products()

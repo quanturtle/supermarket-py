@@ -1,12 +1,11 @@
 '''
-DAG: scrape_category_urls_html_casarica
+DAG: supermarket_biggie_scrape_category_urls_html
 SUPERMARKETS --> CATEGORY_URLS_HTML
 '''
 from datetime import datetime
 import requests
 import broker
 from requests.exceptions import RequestException
-from redis.exceptions import ResponseError
 from airflow.decorators import dag, task
 from airflow.exceptions import AirflowNotFoundException
 from airflow.providers.postgres.hooks.postgres import PostgresHook
@@ -24,12 +23,14 @@ TRANSFORM_STREAM_NAME = 'transform_category_urls_html_stream'
 GROUP_NAME = 'product_db_inserters'
 CONSUMER_NAME = 'transformer'
 
+SUPERMARKET_NAME = 'Biggie'
+
 @dag(
     default_args=DEFAULT_ARGS,
-    tags=['casarica', 'etl'],
+    tags=['biggie', 'etl'],
     catchup=False,
 )
-def scrape_category_urls_html_casarica():
+def supermarket_biggie_scrape_category_urls_html():
     @task()
     def setup_transform_stream():
         my_broker = broker.Broker(redis_connection_id=REDIS_CONN_ID)
@@ -43,17 +44,17 @@ def scrape_category_urls_html_casarica():
     def extract_supermarkets():
         hook = PostgresHook(postgres_conn_id=POSTGRES_CONN_ID)
 
-        sql = '''
-            SELECT id, category_urls_container_url
+        sql = f'''
+            SELECT id, api_url
             FROM supermarkets
-            WHERE name LIKE 'Casa Rica'
+            WHERE name LIKE '{SUPERMARKET_NAME}'
             LIMIT 1;
         '''
 
         result = hook.get_first(sql)
-
+        
         if not result:
-            raise AirflowNotFoundException('No casarica row found in `supermarkets` table.')
+            raise AirflowNotFoundException('No Biggie row found in `supermarkets` table.')
 
         my_broker = broker.Broker(redis_connection_id=REDIS_CONN_ID)
         my_broker.create_connection()
@@ -83,7 +84,7 @@ def scrape_category_urls_html_casarica():
 
                 if not url:
                     raise ValueError(
-                        f'Missing "category_urls_container_url" for supermarket ID {supermarket_id}'
+                        f'Missing "api_url" for supermarket ID {supermarket_id}'
                     )
             
                 try:
@@ -114,4 +115,4 @@ def scrape_category_urls_html_casarica():
     setup >> extract >> transform
 
 
-scrape_category_urls_html_casarica()
+supermarket_biggie_scrape_category_urls_html()

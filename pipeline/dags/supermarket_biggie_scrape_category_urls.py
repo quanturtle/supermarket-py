@@ -1,13 +1,15 @@
 '''
-DAG: scrape_category_urls_casarica
-CATEGORY_URLS_HTML --> CATEGORY_URLS
+DAG: supermarket_biggie_scrape_category_urls
+SUPERMARKETS --> CATEGORY_URLS_HTML
 '''
-import broker
 from datetime import datetime
+import json
+import broker
+from requests.exceptions import RequestException
+from redis.exceptions import ResponseError
 from airflow.decorators import dag, task
 from airflow.exceptions import AirflowNotFoundException
 from airflow.providers.postgres.hooks.postgres import PostgresHook
-from bs4 import BeautifulSoup
 
 
 DEFAULT_ARGS = {
@@ -22,15 +24,15 @@ TRANSFORM_STREAM_NAME = 'transform_category_urls_stream'
 GROUP_NAME = 'product_db_inserters'
 CONSUMER_NAME = 'transformer'
 
-CATEGORY_STRING_IN_URL = 'catalogo'
+SUPERMARKET_ID = 3
 
 
 @dag(
     default_args=DEFAULT_ARGS,
-    tags=['casarica', 'etl'],
+    tags=['biggie', 'etl'],
     catchup=False,
 )
-def scrape_category_urls_casarica():
+def supermarket_biggie_scrape_category_urls():
     @task()
     def setup_transform_stream():
         my_broker = broker.Broker(redis_connection_id=REDIS_CONN_ID)
@@ -40,15 +42,14 @@ def scrape_category_urls_casarica():
 
         return
     
-
     @task()
     def extract_category_urls_html():
         hook = PostgresHook(postgres_conn_id=POSTGRES_CONN_ID)
 
-        sql = '''
+        sql = f'''
             SELECT supermarket_id, html, url
             FROM category_urls_html
-            WHERE supermarket_id = 5
+            WHERE supermarket_id = {SUPERMARKET_ID}
             ORDER BY created_at
             LIMIT 1;
         '''
@@ -56,7 +57,7 @@ def scrape_category_urls_casarica():
         result = hook.get_first(sql)
 
         if not result:
-            raise AirflowNotFoundException('No category URLs found for casarica in `category_urls_html` table.')
+            raise AirflowNotFoundException('No Biggie row found in `supermarkets` table.')
 
         my_broker = broker.Broker(redis_connection_id=REDIS_CONN_ID)
         my_broker.create_connection()
@@ -82,21 +83,29 @@ def scrape_category_urls_casarica():
                 break
         
             for category_urls_html in batch:
-                soup = BeautifulSoup(category_urls_html['html'], 'html.parser')
-                links = soup.find_all('a', href=True)
-                
+                try:
+                    api_response = json.loads(category_urls_html['html'])
+                    api_items = api_response['items']
+                except:
+                    print('Error loading json from supermarkets')
+
                 category_urls = []
                 
-                for link in links:
-                    if (link['href'] != '#') and (CATEGORY_STRING_IN_URL in link['href']) and (link['href'] != '/catalogos'):
-                        category_url = {
-                            'supermarket_id': category_urls_html['supermarket_id'],
-                            'description': link.get_text(strip=True),
-                            'url': f'https://www.casarica.com.py/{link['href']}',
-                            'created_at': datetime.now().isoformat()
-                        }
-                        
-                        category_urls.append(category_url)
+                LIMIT = 50
+                OFFSET = 0
+
+                for item in api_items:
+                    slug = item['slug'].strip()
+                    url_with_slug = f'https://api.app.biggie.com.py/api/articles?take={LIMIT}&skip={OFFSET}&classificationName={slug}'
+
+                    category_url = {
+                        'supermarket_id': category_urls_html['supermarket_id'],
+                        'description': item['name'],
+                        'url': url_with_slug,
+                        'created_at': datetime.now().isoformat()
+                    }
+                
+                    category_urls.append(category_url)
 
                 my_broker.ack(TRANSFORM_STREAM_NAME, GROUP_NAME, *[category_urls_html['entry_id']])
                 my_broker.write_pipeline(OUTPUT_STREAM_NAME, *category_urls)
@@ -110,4 +119,5 @@ def scrape_category_urls_casarica():
 
     setup >> extract >> transform
 
-scrape_category_urls_casarica()
+
+supermarket_biggie_scrape_category_urls()

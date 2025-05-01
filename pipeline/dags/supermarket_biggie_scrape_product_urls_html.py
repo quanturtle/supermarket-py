@@ -1,19 +1,16 @@
 '''
-DAG: scrape_product_urls_html_superseis
+DAG: scrape_product_urls_html_biggie
 CATEGORY_URLS --> PRODUCT_URLS_HTML
 '''
 import broker
 from datetime import datetime
+import json
 import requests
-from requests.exceptions import RequestException
-from redis import RedisError
 from airflow.decorators import dag, task
 from airflow.exceptions import AirflowNotFoundException
 from airflow.providers.redis.hooks.redis import RedisHook
 from airflow.providers.postgres.hooks.postgres import PostgresHook
-from bs4 import BeautifulSoup
 from collections import deque
-import time
 
 
 DEFAULT_ARGS = {
@@ -28,15 +25,13 @@ TRANSFORM_STREAM_NAME = 'transform_product_urls_html_stream'
 GROUP_NAME = 'product_db_inserters'
 CONSUMER_NAME = 'transformer'
 
-PAGINATION_STRING_IN_URL = 'pageindex'
-
 
 @dag(
     default_args=DEFAULT_ARGS,
-    tags=['superseis', 'etl'],
+    tags=['biggie', 'etl'],
     catchup=False,
 )
-def scrape_product_urls_html_superseis():
+def supermarket_biggie_scrape_product_urls_html():
     @task()
     def setup_transform_stream():
         my_broker = broker.Broker(redis_connection_id=REDIS_CONN_ID)
@@ -54,14 +49,14 @@ def scrape_product_urls_html_superseis():
         sql = '''
             SELECT supermarket_id, url
             FROM category_urls
-            WHERE supermarket_id = 1
+            WHERE supermarket_id = 3
             ORDER BY created_at;
         '''
 
         results = hook.get_records(sql)
 
         if not results:
-            raise AirflowNotFoundException('No category URLs found for Superseis in `category_urls` table.')
+            raise AirflowNotFoundException('No category URLs found for biggie in `category_urls` table.')
 
         my_broker = broker.Broker(redis_connection_id=REDIS_CONN_ID)
         my_broker.create_connection()
@@ -86,49 +81,46 @@ def scrape_product_urls_html_superseis():
         
         while True:
             batch = my_broker.read(TRANSFORM_STREAM_NAME, GROUP_NAME, CONSUMER_NAME, batch_size=1, block_time_ms=5_000)        
-        
+
             if batch is None:
                 break
         
             category_url = batch[0]
         
-            visited_urls = set()
             queue = deque([category_url['url']])
-
-            product_urls_htmls = []
-
+            OFFSET = 0
+            
             while queue:
-                time.sleep(0.5)
                 visiting_url = queue.popleft()
-
+                
                 try:
                     response = requests.get(visiting_url, timeout=30)
                     response.raise_for_status()
-                    html_content = response.text
+                    api_response = response.json()['items']
+                
+                except:
+                    print('Error getting Biggie response')
+                
+                if len(api_response) < 1:
+                    break
 
-                    soup = BeautifulSoup(html_content, 'html.parser')
-                    
-                    links = soup.find_all('a', href=True)
+                product_url_html = {
+                    'supermarket_id': category_url['supermarket_id'],
+                    'html': json.dumps(api_response),
+                    'url': visiting_url,
+                    'created_at': datetime.now().isoformat()
+                }
 
-                    for link in links:
-                        if (PAGINATION_STRING_IN_URL in link['href'].lower()) and (link['href'] not in visited_urls):
-                            queue.append(link['href'])
-                            visited_urls.add(link['href'])
+                my_broker.write(OUTPUT_STREAM_NAME, product_url_html)
 
-                    product_urls_html = {
-                        'supermarket_id': category_url['supermarket_id'],
-                        'html': html_content,
-                        'url': visiting_url,
-                        'created_at': datetime.now().isoformat()
-                    }
+                previous_offset = f'skip={OFFSET}'
+                OFFSET += 50
+                next_offset = f'skip={OFFSET}'
+                next_page = visiting_url.replace(previous_offset, next_offset)
 
-                    product_urls_htmls.append(product_urls_html)
-                    
-                except RequestException as e:
-                    print(f'Failed to fetch URL {visiting_url}: {e}')
+                queue.append(next_page)
 
             my_broker.ack(TRANSFORM_STREAM_NAME, GROUP_NAME, *[category_url['entry_id']])
-            my_broker.write_pipeline(OUTPUT_STREAM_NAME, *product_urls_htmls)
         
         return
 
@@ -140,4 +132,4 @@ def scrape_product_urls_html_superseis():
     setup >> extract >> transform
 
 
-scrape_product_urls_html_superseis()
+supermarket_biggie_scrape_product_urls_html()

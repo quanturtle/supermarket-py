@@ -1,11 +1,10 @@
 '''
-DAG: scrape_product_urls_superseis
+DAG: scrape_product_urls_casarica
 PRODUCT_URLS_HTML --> PRODUCT_URLS
 '''
 from datetime import datetime
 import broker
 from requests.exceptions import RequestException
-from redis import RedisError
 from redis.exceptions import ResponseError
 from airflow.decorators import dag, task
 from airflow.exceptions import AirflowNotFoundException
@@ -27,16 +26,14 @@ GROUP_NAME = 'product_db_inserters'
 CONSUMER_NAME = 'transformer'
 
 PRODUCT_STRING_IN_URL = 'products'
-# superseis
-SUPERMARKET_ID = 1
 
 
 @dag(
     default_args=DEFAULT_ARGS,
-    tags=['superseis', 'etl'],
+    tags=['casarica', 'etl'],
     catchup=False,
 )
-def scrape_product_urls_superseis():
+def scrape_product_urls_casarica():
     @task()
     def setup_transform_stream():
         my_broker = broker.Broker(redis_connection_id=REDIS_CONN_ID)
@@ -51,16 +48,17 @@ def scrape_product_urls_superseis():
     def extract_product_urls_html():
         hook = PostgresHook(postgres_conn_id=POSTGRES_CONN_ID)
 
-        sql = f'''
+        sql = '''
             SELECT supermarket_id, html, url
             FROM product_urls_html
-            WHERE supermarket_id = {SUPERMARKET_ID};
+            WHERE supermarket_id = 5
+            LIMIT 1;
         '''
 
         results = hook.get_records(sql)
 
         if not results:
-            raise AirflowNotFoundException('No product URLs HTML found for Superseis in `product_urls_html` table.')
+            raise AirflowNotFoundException('No product URLs HTML found for casarica in `product_urls_html` table.')
 
         my_broker = broker.Broker(redis_connection_id=REDIS_CONN_ID)
         my_broker.create_connection()
@@ -92,17 +90,19 @@ def scrape_product_urls_superseis():
 
             for product_url_html in batch:
                 soup = BeautifulSoup(product_url_html['html'], 'html.parser')
-
-                links = soup.find_all('a', href=True)
+                product_div = soup.find('div', class_='tab-content')
+                
+                links = product_div.find_all('a', href=True)
 
                 product_urls = []
 
                 for link in links:
-                    if (PRODUCT_STRING_IN_URL in link['href'].lower()) and (link.get_text(strip=True) != ''):
+                    if link['href'] not in ['javascript:void(0);', 'mi-lista']:
+                        description = link.find('h2', class_='ecommercepro-loop-product__title')
                         product_url = {
                             'supermarket_id': product_url_html['supermarket_id'],
-                            'description': link.get_text(strip=True),
-                            'url': link['href'],
+                            'description': description.get_text(strip=True) if description else '',
+                            'url': f'https://www.casarica.com.py/{link['href']}',
                             'created_at': datetime.now().isoformat()
                         }
                         
@@ -121,4 +121,4 @@ def scrape_product_urls_superseis():
     setup >> extract >> transform
 
 
-scrape_product_urls_superseis()
+scrape_product_urls_casarica()

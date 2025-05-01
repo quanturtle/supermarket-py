@@ -53,7 +53,7 @@ def supermarket_casarica_scrape_products_html():
             SELECT supermarket_id, url
             FROM product_urls
             WHERE supermarket_id = {SUPERMARKET_ID}
-            LIMIT 1;
+            ORDER BY created_at;
         '''
 
         results = hook.get_records(sql)

@@ -49,7 +49,7 @@ def supermarket_biggie_scrape_product_urls():
             SELECT supermarket_id, html, url
             FROM product_urls_html
             WHERE supermarket_id = {SUPERMARKET_ID}
-            LIMIT 1;
+            ORDER BY created_at;
         '''
 
         results = hook.get_records(sql)

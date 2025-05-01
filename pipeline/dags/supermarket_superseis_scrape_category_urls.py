@@ -53,8 +53,7 @@ def supermarket_superseis_scrape_category_urls():
             SELECT supermarket_id, html, url
             FROM category_urls_html
             WHERE supermarket_id = {SUPERMARKET_ID}
-            ORDER BY created_at
-            LIMIT 1;
+            ORDER BY created_at;
         '''
 
         result = hook.get_first(sql)

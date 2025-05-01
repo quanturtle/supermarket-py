@@ -52,7 +52,8 @@ def supermarket_superseis_scrape_product_urls():
         sql = f'''
             SELECT supermarket_id, html, url
             FROM product_urls_html
-            WHERE supermarket_id = {SUPERMARKET_ID};
+            WHERE supermarket_id = {SUPERMARKET_ID}
+            ORDER BY created_at;
         '''
 
         results = hook.get_records(sql)

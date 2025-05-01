@@ -25,6 +25,8 @@ TRANSFORM_STREAM_NAME = 'transform_product_urls_html_stream'
 GROUP_NAME = 'product_db_inserters'
 CONSUMER_NAME = 'transformer'
 
+SUPERMARKET_ID = 3
+
 
 @dag(
     default_args=DEFAULT_ARGS,
@@ -46,10 +48,10 @@ def supermarket_biggie_scrape_product_urls_html():
     def extract_category_urls():
         hook = PostgresHook(postgres_conn_id=POSTGRES_CONN_ID)
 
-        sql = '''
+        sql = f'''
             SELECT supermarket_id, url
             FROM category_urls
-            WHERE supermarket_id = 3
+            WHERE supermarket_id = {SUPERMARKET_ID}
             ORDER BY created_at;
         '''
 

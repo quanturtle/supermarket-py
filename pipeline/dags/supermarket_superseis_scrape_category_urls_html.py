@@ -25,6 +25,9 @@ CONSUMER_NAME = 'transformer'
 
 SUPERMARKET_NAME = 'Superseis'
 
+BATCH_SIZE = 20
+BLOCK_TIME_MS = 1_000
+
 
 @dag(
     default_args=DEFAULT_ARGS,
@@ -74,7 +77,7 @@ def supermarket_superseis_scrape_category_urls_html():
         my_broker.create_connection()
 
         while True:
-            batch = my_broker.read(TRANSFORM_STREAM_NAME, GROUP_NAME, CONSUMER_NAME, batch_size=20, block_time_ms=5_000)
+            batch = my_broker.read(TRANSFORM_STREAM_NAME, GROUP_NAME, CONSUMER_NAME, batch_size=BATCH_SIZE, block_time_ms=BLOCK_TIME_MS)
         
             if batch is None:
                 break

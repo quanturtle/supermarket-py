@@ -22,6 +22,10 @@ TRANSFORM_STREAM_NAME = 'transform_products_stream'
 GROUP_NAME = 'product_db_inserters'
 CONSUMER_NAME = 'transformer'
 
+SUPERMARKET_ID = 5
+BATCH_SIZE = 20
+BLOCK_TIME_MS = 1_000
+
 PRODUCT_CONTAINER_TAG = 'div'
 PRODUCT_CONTAINER_CLASS = 'single-product-wrapper'
 
@@ -57,10 +61,10 @@ def supermarket_casarica_scrape_products():
     def extract_products_html():
         hook = PostgresHook(postgres_conn_id=POSTGRES_CONN_ID)
 
-        sql = '''
+        sql = f'''
             SELECT supermarket_id, html, url
             FROM products_html
-            WHERE supermarket_id = 5
+            WHERE supermarket_id = {SUPERMARKET_ID}
             LIMIT 1;
         '''
 
@@ -92,7 +96,7 @@ def supermarket_casarica_scrape_products():
         my_broker.create_connection()
 
         while True:
-            batch = my_broker.read(TRANSFORM_STREAM_NAME, GROUP_NAME, CONSUMER_NAME, batch_size=20, block_time_ms=5_000)        
+            batch = my_broker.read(TRANSFORM_STREAM_NAME, GROUP_NAME, CONSUMER_NAME, batch_size=BATCH_SIZE, block_time_ms=BLOCK_TIME_MS)        
         
             if batch is None:
                 break

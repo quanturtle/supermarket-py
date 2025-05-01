@@ -26,7 +26,8 @@ GROUP_NAME = 'product_db_inserters'
 CONSUMER_NAME = 'transformer'
 
 SUPERMARKET_ID = 3
-
+BATCH_SIZE = 20
+BLOCK_TIME_MS = 1_000
 
 @dag(
     default_args=DEFAULT_ARGS,
@@ -82,7 +83,7 @@ def supermarket_biggie_scrape_product_urls_html():
         my_broker.create_connection()
         
         while True:
-            batch = my_broker.read(TRANSFORM_STREAM_NAME, GROUP_NAME, CONSUMER_NAME, batch_size=1, block_time_ms=5_000)        
+            batch = my_broker.read(TRANSFORM_STREAM_NAME, GROUP_NAME, CONSUMER_NAME, batch_size=BATCH_SIZE, block_time_ms=BLOCK_TIME_MS)        
 
             if batch is None:
                 break

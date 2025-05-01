@@ -24,7 +24,6 @@ GROUP_NAME = 'product_db_inserters'
 CONSUMER_NAME = 'transformer'
 
 SUPERMARKET_NAME = 'Casa Rica'
-
 BATCH_SIZE = 20
 BLOCK_TIME_MS = 1_000
 

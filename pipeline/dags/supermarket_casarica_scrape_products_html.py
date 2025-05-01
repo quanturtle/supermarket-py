@@ -27,6 +27,7 @@ CONSUMER_NAME = 'transformer'
 SUPERMARKET_ID = 5
 BATCH_SIZE = 20
 BLOCK_TIME_MS = 1_000
+DELAY_SECONDS = 0.5
 
 
 @dag(
@@ -90,7 +91,7 @@ def supermarket_casarica_scrape_products_html():
 
             for product_url in batch:
                 try:
-                    time.sleep(0.5)
+                    time.sleep(DELAY_SECONDS)
                     
                     response = requests.get(product_url['url'], timeout=30)
                     response.raise_for_status()

@@ -31,7 +31,7 @@ SUPERMARKET_ID = 5
 BATCH_SIZE = 20
 BLOCK_TIME_MS = 1_000
 PAGINATION_STRING_IN_URL = 'catalogo'
-
+DELAY_SECONDS = 0.5
 
 @dag(
     default_args=DEFAULT_ARGS,
@@ -100,7 +100,7 @@ def supermarket_casarica_scrape_product_urls_html():
             product_urls_htmls = []
 
             while queue:
-                time.sleep(0.5)
+                time.sleep(DELAY_SECONDS)
                 visiting_url = queue.popleft()
 
                 try:
@@ -118,7 +118,13 @@ def supermarket_casarica_scrape_product_urls_html():
                         link_href = link['href'].strip().lower()
                         next_url = f'https://www.casarica.com.py/{link['href']}'
                         
-                        if (PAGINATION_STRING_IN_URL in link_href) and (next_url not in visited_urls) and (link_href != '/catalogos') and (link_href != 'catalogo') and (not re.fullmatch(r'/catalogo\.\d+', link_href)):
+                        if (PAGINATION_STRING_IN_URL in link_href) \
+                                and (next_url not in visited_urls) \
+                                and (link_href != '/catalogos') \
+                                and (link_href != '/catalogo') \
+                                and (link_href != 'catalogo') \
+                                and (not link_href.startswith('/')) \
+                                and (not re.search(r'catalogo\.\d+', link_href)):
                             queue.append(next_url)
                             visited_urls.add(next_url)
 

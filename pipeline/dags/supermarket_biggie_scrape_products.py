@@ -25,9 +25,9 @@ GROUP_NAME = 'product_db_inserters'
 CONSUMER_NAME = 'transformer'
 
 SUPERMARKET_ID = 3
-
 BATCH_SIZE = 20
 BLOCK_TIME_MS = 1_000
+
 PRODUCT_NAME = 'name'
 PRODUCT_SKU = 'code'
 PRODUCT_PRICE = 'price'

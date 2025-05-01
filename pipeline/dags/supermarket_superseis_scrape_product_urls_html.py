@@ -27,8 +27,9 @@ GROUP_NAME = 'product_db_inserters'
 CONSUMER_NAME = 'transformer'
 
 SUPERMARKET_ID = 1
-BATCH_SIZE = 1
+BATCH_SIZE = 20
 BLOCK_TIME_MS = 1_000
+DELAY_SECONDS = 0.5
 
 PAGINATION_STRING_IN_URL = 'pageindex'
 
@@ -100,7 +101,7 @@ def supermarket_superseis_scrape_product_urls_html():
             product_urls_htmls = []
 
             while queue:
-                time.sleep(0.5)
+                time.sleep(DELAY_SECONDS)
                 visiting_url = queue.popleft()
 
                 try:

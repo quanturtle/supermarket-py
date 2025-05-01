@@ -49,7 +49,7 @@ def supermarket_casarica_scrape_category_urls():
     def extract_category_urls_html():
         hook = PostgresHook(postgres_conn_id=POSTGRES_CONN_ID)
 
-        sql = '''
+        sql = f'''
             SELECT supermarket_id, html, url
             FROM category_urls_html
             WHERE supermarket_id = {SUPERMARKET_ID}

@@ -2,6 +2,8 @@
 DAG: supermarket_biggie_scrape_product_urls
 PRODUCT_URLS_HTML --> PRODUCT_URLS
 '''
+import re
+import unicodedata
 from datetime import datetime
 import json
 import broker
@@ -75,6 +77,15 @@ def supermarket_biggie_scrape_product_urls():
         return
 
 
+    def create_url_suffix(name, code):
+        name = str(name).replace('‘', "'").replace('´', '')
+        name = unicodedata.normalize('NFKD', name).encode('ascii', 'ignore').decode().lower()
+        name = re.sub(r'[./%]', '', name)
+        slug = re.sub(r'\s+', '-', name).strip('-')
+
+        return f"{slug}-{code}"
+
+
     @task()
     def transform_product_urls_html_to_product_urls():
         my_broker = broker.Broker(redis_connection_id=REDIS_CONN_ID)
@@ -92,25 +103,20 @@ def supermarket_biggie_scrape_product_urls():
                 product_urls = []
 
                 for item in product_urls_html:
-                    url_suffix = item['name'].replace('.', '') \
-				                .replace(' ', '-') \
-				                .replace('/', '-') \
-                                .replace('´', '') \
-                                .replace('%', '') \
-                                .replace('‘', '\'') \
-                                .lower() + '-' + item['code']
+                    url_suffix = create_url_suffix(item['name'], item['code'])
                     
                     product_url = {
                         'supermarket_id': product_url_html['supermarket_id'],
                         'description': item['name'].strip().upper(),
-                        'url': f'https://biggie.com.py/item/{url_suffix}',
+                        'url': f'https://biggie.com.py/item/{url_suffix}'.strip(),
                         'created_at': datetime.now().isoformat()
                     }
+                    print(product_url)
 
                     product_urls.append(product_url)
 
-            my_broker.ack(TRANSFORM_STREAM_NAME, GROUP_NAME, *[product_url_html['entry_id']])
-            my_broker.write_pipeline(OUTPUT_STREAM_NAME, *product_urls)
+                my_broker.ack(TRANSFORM_STREAM_NAME, GROUP_NAME, *[product_url_html['entry_id']])
+                my_broker.write_pipeline(OUTPUT_STREAM_NAME, *product_urls)
 
         return
 

@@ -7,8 +7,6 @@ from datetime import datetime
 import json
 import requests
 from airflow.decorators import dag, task
-from airflow.exceptions import AirflowNotFoundException
-from airflow.providers.redis.hooks.redis import RedisHook
 from airflow.providers.postgres.hooks.postgres import PostgresHook
 from collections import deque
 
@@ -59,7 +57,8 @@ def supermarket_biggie_scrape_product_urls_html():
         results = hook.get_records(sql)
 
         if not results:
-            raise AirflowNotFoundException('No category URLs found for biggie in `category_urls` table.')
+            print('No category URLs found for biggie in `category_urls` table.')
+            raise
 
         my_broker = broker.Broker(redis_connection_id=REDIS_CONN_ID)
         my_broker.create_connection()
@@ -73,7 +72,7 @@ def supermarket_biggie_scrape_product_urls_html():
             })
         
         my_broker.write_pipeline(TRANSFORM_STREAM_NAME, *category_urls)
-        
+
         return
 
 
@@ -88,45 +87,44 @@ def supermarket_biggie_scrape_product_urls_html():
             if batch is None:
                 break
         
-            category_url = batch[0]
-        
-            queue = deque([category_url['url']])
-            OFFSET = 0
+            for category_url in batch:
+                queue = deque([category_url['url']])
+                OFFSET = 0
             
-            while queue:
-                visiting_url = queue.popleft()
-                
-                try:
-                    response = requests.get(visiting_url, timeout=30)
-                    response.raise_for_status()
-                    api_response = response.json()['items']
-                
-                except:
-                    print('Error getting Biggie response')
-                
-                if len(api_response) < 1:
-                    break
+                while queue:
+                    visiting_url = queue.popleft()
+                    
+                    try:
+                        response = requests.get(visiting_url, timeout=30)
+                        response.raise_for_status()
+                        api_response = response.json()['items']
+                    
+                    except:
+                        print('Error getting Biggie response')
+                    
+                    if len(api_response) < 1:
+                        break
 
-                product_url_html = {
-                    'supermarket_id': category_url['supermarket_id'],
-                    'html': json.dumps(api_response),
-                    'url': visiting_url,
-                    'created_at': datetime.now().isoformat()
-                }
+                    product_url_html = {
+                        'supermarket_id': category_url['supermarket_id'],
+                        'html': json.dumps(api_response),
+                        'url': visiting_url,
+                        'created_at': datetime.now().isoformat()
+                    }
 
-                my_broker.write(OUTPUT_STREAM_NAME, product_url_html)
+                    my_broker.write(OUTPUT_STREAM_NAME, product_url_html)
 
-                previous_offset = f'skip={OFFSET}'
-                OFFSET += 50
-                next_offset = f'skip={OFFSET}'
-                next_page = visiting_url.replace(previous_offset, next_offset)
+                    previous_offset = f'skip={OFFSET}'
+                    OFFSET += 50
+                    next_offset = f'skip={OFFSET}'
+                    next_page = visiting_url.replace(previous_offset, next_offset)
 
-                queue.append(next_page)
+                    queue.append(next_page)
 
-            my_broker.ack(TRANSFORM_STREAM_NAME, GROUP_NAME, *[category_url['entry_id']])
+                my_broker.ack(TRANSFORM_STREAM_NAME, GROUP_NAME, *[category_url['entry_id']])
         
         return
-
+    
 
     setup = setup_transform_stream()
     extract = extract_category_urls()

@@ -2,16 +2,15 @@
 DAG: supermarket_superseis_scrape_products_html
 PRODUCT_URLS --> PRODUCTS_HTML
 '''
+import time
 import broker
-from datetime import datetime
 import requests
+from constants import *
+from datetime import datetime
 from requests.exceptions import RequestException
-from redis import RedisError
 from airflow.decorators import dag, task
 from airflow.exceptions import AirflowNotFoundException
-from airflow.providers.redis.hooks.redis import RedisHook
 from airflow.providers.postgres.hooks.postgres import PostgresHook
-import time
 
 
 DEFAULT_ARGS = {
@@ -21,14 +20,17 @@ DEFAULT_ARGS = {
 
 POSTGRES_CONN_ID = 'my-db'
 REDIS_CONN_ID = 'my-redis'
+
 OUTPUT_STREAM_NAME = 'products_html_stream'
 TRANSFORM_STREAM_NAME = 'superseis_transform_products_html_stream'
 GROUP_NAME = 'product_db_inserters'
 CONSUMER_NAME = 'transformer'
 
-SUPERMARKET_ID = 1
+PIPELINE_NAME = 'scrape_products_html'
+SUPERMARKET_ID = SupermarketID.SUPERSEIS
 BATCH_SIZE = 20
 BLOCK_TIME_MS = 1_000
+
 DELAY_SECONDS = 0.5
 
 

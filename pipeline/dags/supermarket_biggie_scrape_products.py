@@ -1,15 +1,16 @@
 '''
 DAG: supermarket_biggie_scrape_products
 PRODUCTS_HTML --> PRODUCTS
+
+this is a special case, the API response from product_urls_html is enough to populate the products table
 '''
 import json
 import broker
 from datetime import datetime
+from constants import *
 from airflow.decorators import dag, task
 from airflow.exceptions import AirflowNotFoundException
-from airflow.providers.redis.hooks.redis import RedisHook
 from airflow.providers.postgres.hooks.postgres import PostgresHook
-from bs4 import BeautifulSoup
 
 
 DEFAULT_ARGS = {
@@ -19,12 +20,14 @@ DEFAULT_ARGS = {
 
 POSTGRES_CONN_ID = 'my-db'
 REDIS_CONN_ID = 'my-redis'
+
 OUTPUT_STREAM_NAME = 'products_stream'
 TRANSFORM_STREAM_NAME = 'biggie_transform_products_stream'
 GROUP_NAME = 'product_db_inserters'
 CONSUMER_NAME = 'transformer'
 
-SUPERMARKET_ID = 3
+PIPELINE_NAME = 'scrape_products'
+SUPERMARKET_ID = SupermarketID.BIGGIE
 BATCH_SIZE = 20
 BLOCK_TIME_MS = 1_000
 

@@ -3,16 +3,17 @@ DAG: supermarket_casarica_scrape_product_urls_html
 CATEGORY_URLS --> PRODUCT_URLS_HTML
 '''
 import re
+import time
 import broker
-from datetime import datetime
 import requests
+from constants import *
+from bs4 import BeautifulSoup
+from datetime import datetime
+from collections import deque
 from requests.exceptions import RequestException
 from airflow.decorators import dag, task
 from airflow.exceptions import AirflowNotFoundException
 from airflow.providers.postgres.hooks.postgres import PostgresHook
-from bs4 import BeautifulSoup
-from collections import deque
-import time
 
 
 DEFAULT_ARGS = {
@@ -22,14 +23,18 @@ DEFAULT_ARGS = {
 
 POSTGRES_CONN_ID = 'my-db'
 REDIS_CONN_ID = 'my-redis'
+
 OUTPUT_STREAM_NAME = 'product_urls_html_stream'
 TRANSFORM_STREAM_NAME = 'casarica_transform_product_urls_html_stream'
 GROUP_NAME = 'product_db_inserters'
 CONSUMER_NAME = 'transformer'
 
-SUPERMARKET_ID = 5
+PIPELINE_NAME = 'scrape_product_urls_html'
+SUPERMARKET_ID = SupermarketID.CASA_RICA
+
 BATCH_SIZE = 20
 BLOCK_TIME_MS = 1_000
+
 PAGINATION_STRING_IN_URL = 'catalogo'
 DELAY_SECONDS = 0.5
 

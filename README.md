@@ -9,12 +9,11 @@ A project that scrapes data from paraguayan supermarkets.
 
 ```mermaid
 graph LR
-    X[User] --> A[Frontend]
-    A --> B[Backend]
-    B --> C[Workers]
-    D[Airflow] --> C
+    X[User] <--> A[Frontend]
+    A <--> B[Backend]
+    B <--> E
+    D[Airflow] --> C[Workers]
     C --> E[Database]
-
 ```
 
 ## Screenshots
@@ -29,11 +28,6 @@ graph LR
 
 
 ## Install
-Make sure `run_app.sh` is executable:
-```sh
-chmod +x run_app.sh
-```
-
 Use [`neon`](https://neon.tech/) as a `postgres` database. Create an account and use connection string:
 ```
 postgresql://my_user:my_password@***-***.us-east-2.aws.neon.tech/my_database?sslmode=require

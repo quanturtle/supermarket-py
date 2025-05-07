@@ -5,6 +5,7 @@ SUPERMARKETS --> CATEGORY_URLS_HTML
 from datetime import datetime
 import requests
 import broker
+from constants import *
 from requests.exceptions import RequestException
 from airflow.decorators import dag, task
 from airflow.exceptions import AirflowNotFoundException
@@ -18,12 +19,14 @@ DEFAULT_ARGS = {
 
 POSTGRES_CONN_ID = 'my-db'
 REDIS_CONN_ID = 'my-redis'
+
 OUTPUT_STREAM_NAME = 'category_urls_html_stream'
 TRANSFORM_STREAM_NAME = 'casarica_transform_category_urls_html_stream'
 GROUP_NAME = 'product_db_inserters'
 CONSUMER_NAME = 'transformer'
 
-SUPERMARKET_NAME = 'Casa Rica'
+PIPELINE_NAME = 'scrape_category_urls_html'
+SUPERMARKET_NAME = SupermarketName.CASA_RICA
 BATCH_SIZE = 20
 BLOCK_TIME_MS = 1_000
 

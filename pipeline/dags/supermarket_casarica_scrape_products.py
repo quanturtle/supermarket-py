@@ -3,11 +3,12 @@ DAG: supermarket_casarica_scrape_products
 PRODUCTS_HTML --> PRODUCTS
 '''
 import broker
+from constants import *
 from datetime import datetime
+from bs4 import BeautifulSoup
 from airflow.decorators import dag, task
 from airflow.exceptions import AirflowNotFoundException
 from airflow.providers.postgres.hooks.postgres import PostgresHook
-from bs4 import BeautifulSoup
 
 
 DEFAULT_ARGS = {
@@ -17,12 +18,14 @@ DEFAULT_ARGS = {
 
 POSTGRES_CONN_ID = 'my-db'
 REDIS_CONN_ID = 'my-redis'
+
 OUTPUT_STREAM_NAME = 'products_stream'
 TRANSFORM_STREAM_NAME = 'casarica_transform_products_stream'
 GROUP_NAME = 'product_db_inserters'
 CONSUMER_NAME = 'transformer'
 
-SUPERMARKET_ID = 5
+PIPELINE_NAME = 'scrape_products'
+SUPERMARKET_ID = SupermarketID.CASA_RICA
 BATCH_SIZE = 20
 BLOCK_TIME_MS = 1_000
 

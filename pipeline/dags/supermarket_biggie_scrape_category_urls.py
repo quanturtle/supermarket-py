@@ -5,8 +5,7 @@ SUPERMARKETS --> CATEGORY_URLS_HTML
 from datetime import datetime
 import json
 import broker
-from requests.exceptions import RequestException
-from redis.exceptions import ResponseError
+from constants import *
 from airflow.decorators import dag, task
 from airflow.exceptions import AirflowNotFoundException
 from airflow.providers.postgres.hooks.postgres import PostgresHook
@@ -19,12 +18,14 @@ DEFAULT_ARGS = {
 
 POSTGRES_CONN_ID = 'my-db'
 REDIS_CONN_ID = 'my-redis'
+
 OUTPUT_STREAM_NAME = 'category_urls_stream'
 TRANSFORM_STREAM_NAME = 'biggie_transform_category_urls_stream'
 GROUP_NAME = 'product_db_inserters'
 CONSUMER_NAME = 'transformer'
 
-SUPERMARKET_ID = 3
+PIPELINE_NAME = 'scrape_category_urls'
+SUPERMARKET_ID = SupermarketID.BIGGIE
 BATCH_SIZE = 20
 BLOCK_TIME_MS = 1_000
 

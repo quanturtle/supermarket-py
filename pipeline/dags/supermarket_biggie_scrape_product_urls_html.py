@@ -1,14 +1,15 @@
 '''
-DAG: scrape_product_urls_html_biggie
+DAG: supermarket_biggie_scrape_product_urls_html_biggie
 CATEGORY_URLS --> PRODUCT_URLS_HTML
 '''
 import broker
 from datetime import datetime
 import json
 import requests
+from constants import *
+from collections import deque
 from airflow.decorators import dag, task
 from airflow.providers.postgres.hooks.postgres import PostgresHook
-from collections import deque
 
 
 DEFAULT_ARGS = {
@@ -18,12 +19,14 @@ DEFAULT_ARGS = {
 
 POSTGRES_CONN_ID = 'my-db'
 REDIS_CONN_ID = 'my-redis'
+
 OUTPUT_STREAM_NAME = 'product_urls_html_stream'
 TRANSFORM_STREAM_NAME = 'biggie_transform_product_urls_html_stream'
 GROUP_NAME = 'product_db_inserters'
 CONSUMER_NAME = 'transformer'
 
-SUPERMARKET_ID = 3
+PIPELINE_NAME = 'scrape_product_urls_html_biggie'
+SUPERMARKET_ID = SupermarketID.BIGGIE
 BATCH_SIZE = 20
 BLOCK_TIME_MS = 1_000
 

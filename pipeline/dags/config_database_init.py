@@ -20,7 +20,7 @@ def _run_sql(sql: str) -> None:
 
 @dag(
     default_args=DEFAULT_ARGS,
-    tags=["database"],
+    tags=["config"],
     catchup=False,
 )
 def database_init():

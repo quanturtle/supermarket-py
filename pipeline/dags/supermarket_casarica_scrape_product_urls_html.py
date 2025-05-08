@@ -97,56 +97,54 @@ def supermarket_casarica_scrape_product_urls_html():
             if batch is None:
                 break
         
-            category_url = batch[0]
-        
-            visited_urls = set()
-            queue = deque([category_url['url']])
+            for category_url in batch:
+                visited_urls = set()
+                queue = deque([category_url['url']])
 
-            product_urls_htmls = []
+                product_urls_htmls = []
 
-            while queue:
-                time.sleep(DELAY_SECONDS)
-                visiting_url = queue.popleft()
+                while queue:
+                    time.sleep(DELAY_SECONDS)
+                    visiting_url = queue.popleft()
 
-                try:
-                    print(visiting_url)
-                    response = requests.get(visiting_url, timeout=30)
-                    response.raise_for_status()
-                    html_content = response.text
+                    try:
+                        response = requests.get(visiting_url, timeout=30)
+                        response.raise_for_status()
+                        html_content = response.text
 
-                    soup = BeautifulSoup(html_content, 'html.parser')
-                    product_div = soup.find('div', class_='content-area', attrs={'id': 'primary'})
+                        soup = BeautifulSoup(html_content, 'html.parser')
+                        product_div = soup.find('div', class_='content-area', attrs={'id': 'primary'})
 
-                    links = product_div.find_all('a', href=True)
+                        links = product_div.find_all('a', href=True)
 
-                    for link in links:
-                        link_href = link['href'].strip().lower()
-                        next_url = f'https://www.casarica.com.py/{link['href']}'
+                        for link in links:
+                            link_href = link['href'].strip().lower()
+                            next_url = f'https://www.casarica.com.py/{link['href']}'
+                            
+                            if (PAGINATION_STRING_IN_URL in link_href) \
+                                    and (next_url not in visited_urls) \
+                                    and (link_href != '/catalogos') \
+                                    and (link_href != '/catalogo') \
+                                    and (link_href != 'catalogo') \
+                                    and (not link_href.startswith('/')) \
+                                    and (not re.search(r'catalogo\.\d+', link_href)):
+                                queue.append(next_url)
+                                visited_urls.add(next_url)
+
+                        product_urls_html = {
+                            'supermarket_id': category_url['supermarket_id'],
+                            'html': html_content,
+                            'url': visiting_url,
+                            'created_at': datetime.now().isoformat()
+                        }
                         
-                        if (PAGINATION_STRING_IN_URL in link_href) \
-                                and (next_url not in visited_urls) \
-                                and (link_href != '/catalogos') \
-                                and (link_href != '/catalogo') \
-                                and (link_href != 'catalogo') \
-                                and (not link_href.startswith('/')) \
-                                and (not re.search(r'catalogo\.\d+', link_href)):
-                            queue.append(next_url)
-                            visited_urls.add(next_url)
+                        product_urls_htmls.append(product_urls_html)
+                        
+                    except RequestException as e:
+                        print(f'Failed to fetch URL {visiting_url}: {e}')
 
-                    product_urls_html = {
-                        'supermarket_id': category_url['supermarket_id'],
-                        'html': html_content,
-                        'url': visiting_url,
-                        'created_at': datetime.now().isoformat()
-                    }
-                    
-                    product_urls_htmls.append(product_urls_html)
-                    
-                except RequestException as e:
-                    print(f'Failed to fetch URL {visiting_url}: {e}')
-
-            my_broker.ack(TRANSFORM_STREAM_NAME, GROUP_NAME, *[category_url['entry_id']])
-            my_broker.write_pipeline(OUTPUT_STREAM_NAME, *product_urls_htmls)
+                my_broker.ack(TRANSFORM_STREAM_NAME, GROUP_NAME, *[category_url['entry_id']])
+                my_broker.write_pipeline(OUTPUT_STREAM_NAME, *product_urls_htmls)
         
         return
 

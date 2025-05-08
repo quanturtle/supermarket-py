@@ -81,7 +81,7 @@ def supermarket_biggie_scrape_product_urls():
 
 
     def create_url_suffix(name, code):
-        name = str(name).replace('‘', "'").replace('´', '')
+        name = str(name).replace('‘', "'").replace('´', '').replace('#', '').replace('(', '').replace(')', '').replace('?', '')
         name = unicodedata.normalize('NFKD', name).encode('ascii', 'ignore').decode().lower()
         name = re.sub(r'[./%]', '', name)
         slug = re.sub(r'\s+', '-', name).strip('-')
@@ -114,7 +114,6 @@ def supermarket_biggie_scrape_product_urls():
                         'url': f'https://biggie.com.py/item/{url_suffix}'.strip(),
                         'created_at': datetime.now().isoformat()
                     }
-                    print(product_url)
 
                     product_urls.append(product_url)
 

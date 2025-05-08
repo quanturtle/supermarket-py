@@ -87,3 +87,9 @@ class Broker:
         pipeline.execute()
         
         return
+    
+
+    def xtrim(self, stream_name: str, stream_len: int):
+        self.conn.xtrim(stream_name, maxlen=stream_len)
+
+        return

@@ -12,6 +12,7 @@ DEFAULT_ARGS = {
 }
 
 REDIS_CONN_ID = 'my-redis'
+GROUP_NAME = 'product_db_inserters'
 
 
 @dag(
@@ -46,8 +47,6 @@ def config_streams_init():
         my_broker = broker.Broker(redis_connection_id=REDIS_CONN_ID)
         my_broker.create_connection()
 
-        GROUP_NAME = 'product_db_inserters'
-
         for transform_stream_name in transform_streams:
             my_broker.create_xgroup(transform_stream_name, GROUP_NAME)
 
@@ -68,10 +67,19 @@ def config_streams_init():
         my_broker = broker.Broker(redis_connection_id=REDIS_CONN_ID)
         my_broker.create_connection()
 
-        GROUP_NAME = 'product_db_inserters'
-
         for output_stream_name in output_streams:
             my_broker.create_xgroup(output_stream_name, GROUP_NAME)
+
+        return
+
+
+    @task()
+    def create_error_streams():
+        my_broker = broker.Broker(redis_connection_id=REDIS_CONN_ID)
+        my_broker.create_connection()
+
+        my_broker.create_xgroup('error_request_stream', GROUP_NAME)
+        my_broker.create_xgroup('error_transform_stream', GROUP_NAME)
 
         return
 
@@ -79,6 +87,7 @@ def config_streams_init():
     (
         create_transform_streams()
         >> create_output_streams()
+        >> create_error_streams()
     )
 
 

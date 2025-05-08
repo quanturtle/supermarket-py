@@ -21,6 +21,7 @@ REDIS_CONN_ID = 'my-redis'
 
 OUTPUT_STREAM_NAME = 'category_urls_html_stream'
 TRANSFORM_STREAM_NAME = 'biggie_transform_category_urls_html_stream'
+ERROR_REQUEST_STREAM_NAME = 'error_request_stream'
 GROUP_NAME = 'product_db_inserters'
 CONSUMER_NAME = 'transformer'
 
@@ -80,10 +81,10 @@ def supermarket_biggie_scrape_category_urls_html():
 
     @task()
     def transform_supermarkets_to_category_urls_html():
-        try:
-            my_broker = broker.Broker(redis_connection_id=REDIS_CONN_ID)
-            my_broker.create_connection()        
+        my_broker = broker.Broker(redis_connection_id=REDIS_CONN_ID)
+        my_broker.create_connection()
 
+        try:
             while True:
                 batch = my_broker.read(TRANSFORM_STREAM_NAME, GROUP_NAME, CONSUMER_NAME, batch_size=BATCH_SIZE, block_time_ms=BLOCK_TIME_MS)
             
@@ -94,16 +95,20 @@ def supermarket_biggie_scrape_category_urls_html():
                     try:
                         resp = requests.get(supermarket['url'], timeout=30)
                     
-                    except Timeout:
-                        # error = 'request timed out'
+                    except Timeout as to:
+                        my_broker.write(ERROR_REQUEST_STREAM_NAME, {'url': supermarket['url'], 'exception': 'request timed out', 'detail': to})
                         continue
 
-                    except InvalidURL:
-                        # error = 'invalid url'
+                    except InvalidURL as iu:
+                        my_broker.write(ERROR_REQUEST_STREAM_NAME, {'url': supermarket['url'], 'exception': 'invalid url', 'detail': iu})
                         continue
 
-                    except HTTPError:
-                        # error = 'http error'
+                    except HTTPError as ht:
+                        my_broker.write(ERROR_REQUEST_STREAM_NAME, {'url': supermarket['url'], 'exception': 'http error', 'detail': ht})
+                        continue
+
+                    except Exception as e:
+                        my_broker.write(ERROR_REQUEST_STREAM_NAME, {'url': supermarket['url'], 'exception': 'uncaught exception', 'detail': e})
                         continue
 
                     category_urls_html = {

@@ -46,10 +46,8 @@ def config_streams_clear():
         my_broker = broker.Broker(redis_connection_id=REDIS_CONN_ID)
         my_broker.create_connection()
 
-        GROUP_NAME = 'product_db_inserters'
-
-        # for transform_stream_name in transform_streams:
-        #     my_broker.xtrim(transform_stream_name, GROUP_NAME)
+        for transform_stream_name in transform_streams:
+            my_broker.xtrim(transform_stream_name, stream_len=0)
 
         return
 
@@ -68,10 +66,8 @@ def config_streams_clear():
         my_broker = broker.Broker(redis_connection_id=REDIS_CONN_ID)
         my_broker.create_connection()
 
-        GROUP_NAME = 'product_db_inserters'
-
-        # for output_stream_name in output_streams:
-        #     my_broker.xtrim(output_stream_name, GROUP_NAME)
+        for output_stream_name in output_streams:
+            my_broker.xtrim(output_stream_name, stream_len=0)
 
         return
 

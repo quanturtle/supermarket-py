@@ -27,7 +27,7 @@ GROUP_NAME = 'product_db_inserters'
 CONSUMER_NAME = 'transformer'
 
 PIPELINE_NAME = 'scrape_products_html'
-SUPERMARKET_ID = SupermarketID.BIGGIE
+SUPERMARKET_ID = SupermarketID.BIGGIE.value
 BATCH_SIZE = 20
 BLOCK_TIME_MS = 1_000
 DELAY_SECONDS = 0.5

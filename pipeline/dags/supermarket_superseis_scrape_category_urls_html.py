@@ -26,7 +26,7 @@ GROUP_NAME = 'product_db_inserters'
 CONSUMER_NAME = 'transformer'
 
 PIPELINE_NAME = 'scrape_category_urls_html'
-SUPERMARKET_NAME = SupermarketName.SUPERSEIS
+SUPERMARKET_NAME = SupermarketName.SUPERSEIS.value
 BATCH_SIZE = 20
 BLOCK_TIME_MS = 1_000
 
@@ -53,8 +53,7 @@ def supermarket_superseis_scrape_category_urls_html():
         sql = f'''
             SELECT id, category_urls_container_url
             FROM supermarkets
-            WHERE name LIKE '{SUPERMARKET_NAME}'
-            ORDER BY created_at;
+            WHERE name LIKE '{SUPERMARKET_NAME}';
         '''
 
         result = hook.get_first(sql)

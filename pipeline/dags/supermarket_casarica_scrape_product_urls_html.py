@@ -30,7 +30,7 @@ GROUP_NAME = 'product_db_inserters'
 CONSUMER_NAME = 'transformer'
 
 PIPELINE_NAME = 'scrape_product_urls_html'
-SUPERMARKET_ID = SupermarketID.CASA_RICA
+SUPERMARKET_ID = SupermarketID.CASA_RICA.value
 
 BATCH_SIZE = 20
 BLOCK_TIME_MS = 1_000

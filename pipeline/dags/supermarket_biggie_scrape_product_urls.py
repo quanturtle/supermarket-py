@@ -27,7 +27,7 @@ GROUP_NAME = 'product_db_inserters'
 CONSUMER_NAME = 'transformer'
 
 PIPELINE_NAME = 'scrape_product_urls'
-SUPERMARKET_ID = SupermarketID.BIGGIE
+SUPERMARKET_ID = SupermarketID.BIGGIE.value
 BATCH_SIZE = 20
 BLOCK_TIME_MS = 1_000
 
@@ -86,7 +86,7 @@ def supermarket_biggie_scrape_product_urls():
         name = re.sub(r'[./%]', '', name)
         slug = re.sub(r'\s+', '-', name).strip('-')
 
-        return f"{slug}-{code}"
+        return f'{slug}-{code}'
 
 
     @task()

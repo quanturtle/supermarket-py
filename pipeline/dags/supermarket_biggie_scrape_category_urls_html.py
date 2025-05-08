@@ -27,7 +27,7 @@ CONSUMER_NAME = 'transformer'
 
 PIPELINE_NAME = 'scrape_category_urls_html'
 SUPERMARKET_ID = SupermarketID.BIGGIE
-SUPERMARKET_NAME = SupermarketName.BIGGIE
+SUPERMARKET_NAME = SupermarketName.BIGGIE.value
 BATCH_SIZE = 20
 BLOCK_TIME_MS = 1_000
 
@@ -46,8 +46,9 @@ def supermarket_biggie_scrape_category_urls_html():
         
             my_broker.create_xgroup(TRANSFORM_STREAM_NAME, GROUP_NAME)
         
-        except:
+        except Exception as e:
             print(f'[{SUPERMARKET_ID}] - [{PIPELINE_NAME}] - [SETUP]')
+            print(e)
 
         return
     
@@ -59,8 +60,7 @@ def supermarket_biggie_scrape_category_urls_html():
             sql = f'''
                 SELECT id, api_url
                 FROM supermarkets
-                WHERE name LIKE '{SUPERMARKET_NAME}'
-                ORDER BY created_at;
+                WHERE name LIKE '{SUPERMARKET_NAME}';
             '''
 
             result = hook.get_first(sql)
@@ -73,8 +73,9 @@ def supermarket_biggie_scrape_category_urls_html():
                 'url': result[1]
             })
         
-        except:
+        except Exception as e:
             print(f'[{SUPERMARKET_ID}] - [{PIPELINE_NAME}] - [EXTRACT]')
+            print(e)
 
         return
 
@@ -121,8 +122,9 @@ def supermarket_biggie_scrape_category_urls_html():
                     my_broker.ack(TRANSFORM_STREAM_NAME, GROUP_NAME, *[supermarket['entry_id']])
                     my_broker.write(OUTPUT_STREAM_NAME, category_urls_html)
         
-        except:
+        except Exception as e:
             print(f'[{SUPERMARKET_ID}] - [{PIPELINE_NAME}] - [TRANSFORM]')
+            print(e)
         
         return
 

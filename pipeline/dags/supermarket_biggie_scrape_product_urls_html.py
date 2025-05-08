@@ -26,7 +26,7 @@ GROUP_NAME = 'product_db_inserters'
 CONSUMER_NAME = 'transformer'
 
 PIPELINE_NAME = 'scrape_product_urls_html_biggie'
-SUPERMARKET_ID = SupermarketID.BIGGIE
+SUPERMARKET_ID = SupermarketID.BIGGIE.value
 BATCH_SIZE = 20
 BLOCK_TIME_MS = 1_000
 
@@ -38,43 +38,49 @@ BLOCK_TIME_MS = 1_000
 def supermarket_biggie_scrape_product_urls_html():
     @task()
     def setup_transform_stream():
-        my_broker = broker.Broker(redis_connection_id=REDIS_CONN_ID)
-        my_broker.create_connection()
-        
-        my_broker.create_xgroup(TRANSFORM_STREAM_NAME, GROUP_NAME)
+        try:
+            my_broker = broker.Broker(redis_connection_id=REDIS_CONN_ID)
+            my_broker.create_connection()
+            
+            my_broker.create_xgroup(TRANSFORM_STREAM_NAME, GROUP_NAME)
 
+        except Exception as e:
+            print(f'[{SUPERMARKET_ID}] - [{PIPELINE_NAME}] - [SETUP]')
+            print(e)
+            
         return
     
     
     @task()
     def extract_category_urls():
-        hook = PostgresHook(postgres_conn_id=POSTGRES_CONN_ID)
+        try:
+            hook = PostgresHook(postgres_conn_id=POSTGRES_CONN_ID)
 
-        sql = f'''
-            SELECT supermarket_id, url
-            FROM category_urls
-            WHERE supermarket_id = {SUPERMARKET_ID}
-            ORDER BY created_at;
-        '''
+            sql = f'''
+                SELECT supermarket_id, url
+                FROM category_urls
+                WHERE supermarket_id = {SUPERMARKET_ID}
+                ORDER BY created_at;
+            '''
 
-        results = hook.get_records(sql)
+            results = hook.get_records(sql)
 
-        if not results:
-            print('No category URLs found for biggie in `category_urls` table.')
-            raise
+            my_broker = broker.Broker(redis_connection_id=REDIS_CONN_ID)
+            my_broker.create_connection()
 
-        my_broker = broker.Broker(redis_connection_id=REDIS_CONN_ID)
-        my_broker.create_connection()
+            category_urls = []
+            
+            for row in results:
+                category_urls.append({
+                    'supermarket_id': row[0],
+                    'url': row[1]
+                })
+            
+            my_broker.write_pipeline(TRANSFORM_STREAM_NAME, *category_urls)
 
-        category_urls = []
-        
-        for row in results:
-            category_urls.append({
-                'supermarket_id': row[0],
-                'url': row[1]
-            })
-        
-        my_broker.write_pipeline(TRANSFORM_STREAM_NAME, *category_urls)
+        except Exception as e:
+            print(f'[{SUPERMARKET_ID}] - [{PIPELINE_NAME}] - [EXTRACT]')
+            print(e)
 
         return
 
@@ -84,47 +90,52 @@ def supermarket_biggie_scrape_product_urls_html():
         my_broker = broker.Broker(redis_connection_id=REDIS_CONN_ID)
         my_broker.create_connection()
         
-        while True:
-            batch = my_broker.read(TRANSFORM_STREAM_NAME, GROUP_NAME, CONSUMER_NAME, batch_size=BATCH_SIZE, block_time_ms=BLOCK_TIME_MS)        
+        try:
+            while True:
+                batch = my_broker.read(TRANSFORM_STREAM_NAME, GROUP_NAME, CONSUMER_NAME, batch_size=BATCH_SIZE, block_time_ms=BLOCK_TIME_MS)        
 
-            if batch is None:
-                break
-        
-            for category_url in batch:
-                queue = deque([category_url['url']])
-                OFFSET = 0
+                if batch is None:
+                    break
             
-                while queue:
-                    visiting_url = queue.popleft()
-                    
-                    try:
-                        response = requests.get(visiting_url, timeout=30)
-                        response.raise_for_status()
-                        api_response = response.json()['items']
-                    
-                    except:
-                        print('Error getting Biggie response')
-                    
-                    if len(api_response) < 1:
-                        break
+                for category_url in batch:
+                    queue = deque([category_url['url']])
+                    OFFSET = 0
+                
+                    while queue:
+                        visiting_url = queue.popleft()
+                        
+                        try:
+                            response = requests.get(visiting_url, timeout=30)
+                            response.raise_for_status()
+                            api_response = response.json()['items']
+                        
+                        except:
+                            print('Error getting Biggie response')
+                        
+                        if len(api_response) < 1:
+                            break
 
-                    product_url_html = {
-                        'supermarket_id': category_url['supermarket_id'],
-                        'html': json.dumps(api_response),
-                        'url': visiting_url,
-                        'created_at': datetime.now().isoformat()
-                    }
+                        product_url_html = {
+                            'supermarket_id': category_url['supermarket_id'],
+                            'html': json.dumps(api_response),
+                            'url': visiting_url,
+                            'created_at': datetime.now().isoformat()
+                        }
 
-                    my_broker.write(OUTPUT_STREAM_NAME, product_url_html)
+                        my_broker.write(OUTPUT_STREAM_NAME, product_url_html)
 
-                    previous_offset = f'skip={OFFSET}'
-                    OFFSET += 50
-                    next_offset = f'skip={OFFSET}'
-                    next_page = visiting_url.replace(previous_offset, next_offset)
+                        previous_offset = f'skip={OFFSET}'
+                        OFFSET += 50
+                        next_offset = f'skip={OFFSET}'
+                        next_page = visiting_url.replace(previous_offset, next_offset)
 
-                    queue.append(next_page)
+                        queue.append(next_page)
 
-                my_broker.ack(TRANSFORM_STREAM_NAME, GROUP_NAME, *[category_url['entry_id']])
+                    my_broker.ack(TRANSFORM_STREAM_NAME, GROUP_NAME, *[category_url['entry_id']])
+
+        except Exception as e:
+            print(f'[{SUPERMARKET_ID}] - [{PIPELINE_NAME}] - [TRANSFORM]')
+            print(e)
         
         return
     

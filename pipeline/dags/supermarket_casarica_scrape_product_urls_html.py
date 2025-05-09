@@ -1,5 +1,5 @@
 '''
-DAG: supermarket_casarica_scrape_product_urls_html
+# supermarket_casarica_scrape_product_urls_html
 CATEGORY_URLS --> PRODUCT_URLS_HTML
 '''
 import re
@@ -31,57 +31,66 @@ CONSUMER_NAME = 'transformer'
 
 PIPELINE_NAME = 'scrape_product_urls_html'
 SUPERMARKET_ID = SupermarketID.CASA_RICA.value
-
 BATCH_SIZE = 20
 BLOCK_TIME_MS = 1_000
 
-PAGINATION_STRING_IN_URL = 'catalogo'
 DELAY_SECONDS = 0.5
+
+PAGINATION_STRING_IN_URL = 'catalogo'
+
 
 @dag(
     default_args=DEFAULT_ARGS,
     tags=['casarica', 'etl'],
     catchup=False,
+    doc_md=__doc__
 )
 def supermarket_casarica_scrape_product_urls_html():
     @task()
     def setup_transform_stream():
-        my_broker = broker.Broker(redis_connection_id=REDIS_CONN_ID)
-        my_broker.create_connection()
+        try:
+            my_broker = broker.Broker(redis_connection_id=REDIS_CONN_ID)
+            my_broker.create_connection()
+            
+            my_broker.create_xgroup(TRANSFORM_STREAM_NAME, GROUP_NAME)
         
-        my_broker.create_xgroup(TRANSFORM_STREAM_NAME, GROUP_NAME)
+        except Exception as e:
+            print(f'[{SUPERMARKET_ID}] - [{PIPELINE_NAME}] - [SETUP]')
+            print(e)
 
         return
     
     
     @task()
     def extract_category_urls():
-        hook = PostgresHook(postgres_conn_id=POSTGRES_CONN_ID)
+        try:
+            hook = PostgresHook(postgres_conn_id=POSTGRES_CONN_ID)
 
-        sql = f'''
-            SELECT supermarket_id, url
-            FROM category_urls
-            WHERE supermarket_id = {SUPERMARKET_ID}
-            ORDER BY created_at;
-        '''
+            sql = f'''
+                SELECT supermarket_id, url
+                FROM category_urls
+                WHERE supermarket_id = {SUPERMARKET_ID}
+                ORDER BY created_at;
+            '''
 
-        results = hook.get_records(sql)
+            results = hook.get_records(sql)
 
-        if not results:
-            raise AirflowNotFoundException('No category URLs found for casarica in `category_urls` table.')
+            my_broker = broker.Broker(redis_connection_id=REDIS_CONN_ID)
+            my_broker.create_connection()
 
-        my_broker = broker.Broker(redis_connection_id=REDIS_CONN_ID)
-        my_broker.create_connection()
-
-        category_urls = []
+            category_urls = []
+            
+            for row in results:
+                category_urls.append({
+                    'supermarket_id': row[0],
+                    'url': row[1]
+                })
+            
+            my_broker.write_pipeline(TRANSFORM_STREAM_NAME, *category_urls)
         
-        for row in results:
-            category_urls.append({
-                'supermarket_id': row[0],
-                'url': row[1]
-            })
-        
-        my_broker.write_pipeline(TRANSFORM_STREAM_NAME, *category_urls)
+        except Exception as e:
+            print(f'[{SUPERMARKET_ID}] - [{PIPELINE_NAME}] - [EXTRACT]')
+            print(e)
         
         return
 
@@ -91,42 +100,54 @@ def supermarket_casarica_scrape_product_urls_html():
         my_broker = broker.Broker(redis_connection_id=REDIS_CONN_ID)
         my_broker.create_connection()
         
-        while True:
-            batch = my_broker.read(TRANSFORM_STREAM_NAME, GROUP_NAME, CONSUMER_NAME, batch_size=BATCH_SIZE, block_time_ms=BLOCK_TIME_MS)        
-        
-            if batch is None:
-                break
-        
-            for category_url in batch:
-                visited_urls = set()
-                queue = deque([category_url['url']])
+        try:
+            while True:
+                batch = my_broker.read(TRANSFORM_STREAM_NAME, GROUP_NAME, CONSUMER_NAME, batch_size=BATCH_SIZE, block_time_ms=BLOCK_TIME_MS)        
+            
+                if batch is None:
+                    break
+            
+                for category_url in batch:
+                    visited_urls = {category_url["url"]}
+                    queue = deque([category_url['url']])
 
-                product_urls_htmls = []
+                    product_urls_htmls = []
 
-                while queue:
-                    time.sleep(DELAY_SECONDS)
-                    visiting_url = queue.popleft()
+                    while queue:
+                        time.sleep(DELAY_SECONDS)
+                        visiting_url = queue.popleft()
 
-                    try:
-                        response = requests.get(visiting_url, timeout=30)
-                        response.raise_for_status()
-                        html_content = response.text
+                        try:
+                            response = requests.get(visiting_url, timeout=30)
+                            html_content = response.text
+
+                        # except Exception as e:
+                        #     print(e)
+                        #     continue
+
+                        # except Exception as e:
+                        #     print(e)
+                        #     continue
+                        
+                        except Exception as e:
+                            print(e)
+                            continue
 
                         soup = BeautifulSoup(html_content, 'html.parser')
-                        product_div = soup.find('div', class_='content-area', attrs={'id': 'primary'})
+                        
+                        pagination_div = soup.find('div', class_='shop-control-bar-bottom')
+                        pagination_links = pagination_div.find_all('a', href=True)
 
-                        links = product_div.find_all('a', href=True)
-
-                        for link in links:
+                        for link in pagination_links:
                             link_href = link['href'].strip().lower()
-                            next_url = f'https://www.casarica.com.py/{link['href']}'
+                            next_url = f'https://www.casarica.com.py/{link_href}'
                             
                             if (PAGINATION_STRING_IN_URL in link_href) \
                                     and (next_url not in visited_urls) \
                                     and (link_href != '/catalogos') \
                                     and (link_href != '/catalogo') \
                                     and (link_href != 'catalogo') \
-                                    and (not link_href.startswith('/')) \
+                                    and (not link_href.startswith('/catalogo')) \
                                     and (not re.search(r'catalogo\.\d+', link_href)):
                                 queue.append(next_url)
                                 visited_urls.add(next_url)
@@ -139,12 +160,14 @@ def supermarket_casarica_scrape_product_urls_html():
                         }
                         
                         product_urls_htmls.append(product_urls_html)
-                        
-                    except RequestException as e:
-                        print(f'Failed to fetch URL {visiting_url}: {e}')
 
-                my_broker.ack(TRANSFORM_STREAM_NAME, GROUP_NAME, *[category_url['entry_id']])
-                my_broker.write_pipeline(OUTPUT_STREAM_NAME, *product_urls_htmls)
+                    # load
+                    my_broker.ack(TRANSFORM_STREAM_NAME, GROUP_NAME, *[category_url['entry_id']])
+                    my_broker.write_pipeline(OUTPUT_STREAM_NAME, *product_urls_htmls)
+        
+        except Exception as e:
+            print(f'[{SUPERMARKET_ID}] - [{PIPELINE_NAME}] - [TRANSFORM]')
+            print(e)
         
         return
 

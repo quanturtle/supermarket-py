@@ -1,5 +1,5 @@
 '''
-DAG: supermarket_biggie_scrape_product_urls_html_biggie
+# supermarket_biggie_scrape_product_urls_html_biggie
 CATEGORY_URLS --> PRODUCT_URLS_HTML
 '''
 import broker
@@ -34,6 +34,7 @@ BLOCK_TIME_MS = 1_000
     default_args=DEFAULT_ARGS,
     tags=['biggie', 'etl'],
     catchup=False,
+    doc_md=__doc__
 )
 def supermarket_biggie_scrape_product_urls_html():
     @task()
@@ -109,9 +110,15 @@ def supermarket_biggie_scrape_product_urls_html():
                             response.raise_for_status()
                             api_response = response.json()['items']
                         
+                        # except:
+                        #     print('Error getting Biggie response')
+
+                        # except:
+                        #     print('Error getting Biggie response')
+
                         except:
                             print('Error getting Biggie response')
-                        
+
                         if len(api_response) < 1:
                             break
 
@@ -131,6 +138,7 @@ def supermarket_biggie_scrape_product_urls_html():
 
                         queue.append(next_page)
 
+                    # load
                     my_broker.ack(TRANSFORM_STREAM_NAME, GROUP_NAME, *[category_url['entry_id']])
 
         except Exception as e:

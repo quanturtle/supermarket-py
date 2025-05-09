@@ -1,5 +1,5 @@
 '''
-DAG: supermarket_casarica_scrape_product_urls
+# supermarket_casarica_scrape_product_urls
 PRODUCT_URLS_HTML --> PRODUCT_URLS
 '''
 import broker
@@ -40,47 +40,55 @@ DESCRIPTION_CLASS = 'ecommercepro-loop-product__title'
     default_args=DEFAULT_ARGS,
     tags=['casarica', 'etl'],
     catchup=False,
+    doc_md=__doc__
 )
 def supermarket_casarica_scrape_product_urls():
     @task()
     def setup_transform_stream():
-        my_broker = broker.Broker(redis_connection_id=REDIS_CONN_ID)
-        my_broker.create_connection()
+        try:
+            my_broker = broker.Broker(redis_connection_id=REDIS_CONN_ID)
+            my_broker.create_connection()
+            
+            my_broker.create_xgroup(TRANSFORM_STREAM_NAME, GROUP_NAME)
         
-        my_broker.create_xgroup(TRANSFORM_STREAM_NAME, GROUP_NAME)
+        except Exception as e:
+            print(f'[{SUPERMARKET_ID}] - [{PIPELINE_NAME}] - [SETUP]')
+            print(e)
 
         return
 
 
     @task()
     def extract_product_urls_html():
-        hook = PostgresHook(postgres_conn_id=POSTGRES_CONN_ID)
+        try:
+            hook = PostgresHook(postgres_conn_id=POSTGRES_CONN_ID)
 
-        sql = f'''
-            SELECT supermarket_id, html, url
-            FROM product_urls_html
-            WHERE supermarket_id = {SUPERMARKET_ID}
-            ORDER BY created_at;
-        '''
+            sql = f'''
+                SELECT supermarket_id, html, url
+                FROM product_urls_html
+                WHERE supermarket_id = {SUPERMARKET_ID}
+                ORDER BY created_at;
+            '''
 
-        results = hook.get_records(sql)
+            results = hook.get_records(sql)
 
-        if not results:
-            raise AirflowNotFoundException('No product URLs HTML found for casarica in `product_urls_html` table.')
+            my_broker = broker.Broker(redis_connection_id=REDIS_CONN_ID)
+            my_broker.create_connection()
 
-        my_broker = broker.Broker(redis_connection_id=REDIS_CONN_ID)
-        my_broker.create_connection()
+            product_urls_html = []
+            
+            for row in results:
+                product_urls_html.append({
+                    'supermarket_id': row[0],
+                    'html': row[1],
+                    'url': row[2],
+                })
 
-        product_urls_html = []
+            my_broker.write_pipeline(TRANSFORM_STREAM_NAME, *product_urls_html)
         
-        for row in results:
-            product_urls_html.append({
-                'supermarket_id': row[0],
-                'html': row[1],
-                'url': row[2],
-            })
-
-        my_broker.write_pipeline(TRANSFORM_STREAM_NAME, *product_urls_html)
+        except Exception as e:
+            print(f'[{SUPERMARKET_ID}] - [{PIPELINE_NAME}] - [EXTRACT]')
+            print(e)
 
         return
 
@@ -90,34 +98,40 @@ def supermarket_casarica_scrape_product_urls():
         my_broker = broker.Broker(redis_connection_id=REDIS_CONN_ID)
         my_broker.create_connection()
 
-        while True:
-            batch = my_broker.read(TRANSFORM_STREAM_NAME, GROUP_NAME, CONSUMER_NAME, batch_size=BATCH_SIZE, block_time_ms=BLOCK_TIME_MS)        
+        try:
+            while True:
+                batch = my_broker.read(TRANSFORM_STREAM_NAME, GROUP_NAME, CONSUMER_NAME, batch_size=BATCH_SIZE, block_time_ms=BLOCK_TIME_MS)        
+            
+                if batch is None:
+                    break
+
+                for product_url_html in batch:
+                    soup = BeautifulSoup(product_url_html['html'], 'html.parser')
+                    product_div = soup.find(PRODUCT_CONTAINER_TAG, class_=PRODUCT_CONTAINER_CLASS)
+                    
+                    links = product_div.find_all('a', href=True)
+
+                    product_urls = []
+
+                    for link in links:
+                        if link['href'] not in ['javascript:void(0);', 'mi-lista']:
+                            description = link.find(DESCRIPTION_TAG, class_=DESCRIPTION_CLASS)
+                            product_url = {
+                                'supermarket_id': product_url_html['supermarket_id'],
+                                'description': description.get_text(strip=True) if description else '',
+                                'url': f'https://www.casarica.com.py/{link['href']}',
+                                'created_at': datetime.now().isoformat()
+                            }
+                            
+                            product_urls.append(product_url)
+
+                    # load
+                    my_broker.ack(TRANSFORM_STREAM_NAME, GROUP_NAME, *[product_url_html['entry_id']])
+                    my_broker.write_pipeline(OUTPUT_STREAM_NAME, *product_urls)
         
-            if batch is None:
-                break
-
-            for product_url_html in batch:
-                soup = BeautifulSoup(product_url_html['html'], 'html.parser')
-                product_div = soup.find(PRODUCT_CONTAINER_TAG, class_=PRODUCT_CONTAINER_CLASS)
-                
-                links = product_div.find_all('a', href=True)
-
-                product_urls = []
-
-                for link in links:
-                    if link['href'] not in ['javascript:void(0);', 'mi-lista']:
-                        description = link.find(DESCRIPTION_TAG, class_=DESCRIPTION_CLASS)
-                        product_url = {
-                            'supermarket_id': product_url_html['supermarket_id'],
-                            'description': description.get_text(strip=True) if description else '',
-                            'url': f'https://www.casarica.com.py/{link['href']}',
-                            'created_at': datetime.now().isoformat()
-                        }
-                        
-                        product_urls.append(product_url)
-
-                my_broker.ack(TRANSFORM_STREAM_NAME, GROUP_NAME, *[product_url_html['entry_id']])
-                my_broker.write_pipeline(OUTPUT_STREAM_NAME, *product_urls)
+        except Exception as e:
+            print(f'[{SUPERMARKET_ID}] - [{PIPELINE_NAME}] - [TRANSFORM]')
+            print(e)
 
         return
 

@@ -1,5 +1,5 @@
 '''
-DAG: supermarket_superseis_scrape_category_urls_html
+# supermarket_superseis_scrape_category_urls_html
 SUPERMARKETS --> CATEGORY_URLS_HTML
 '''
 import broker
@@ -26,6 +26,7 @@ GROUP_NAME = 'product_db_inserters'
 CONSUMER_NAME = 'transformer'
 
 PIPELINE_NAME = 'scrape_category_urls_html'
+SUPERMARKET_ID = SupermarketID.SUPERSEIS.value
 SUPERMARKET_NAME = SupermarketName.SUPERSEIS.value
 BATCH_SIZE = 20
 BLOCK_TIME_MS = 1_000
@@ -35,39 +36,47 @@ BLOCK_TIME_MS = 1_000
     default_args=DEFAULT_ARGS,
     tags=['superseis', 'etl'],
     catchup=False,
+    doc_md=__doc__
 )
 def supermarket_superseis_scrape_category_urls_html():
     @task()
     def setup_transform_stream():
-        my_broker = broker.Broker(redis_connection_id=REDIS_CONN_ID)
-        my_broker.create_connection()
-        
-        my_broker.create_xgroup(TRANSFORM_STREAM_NAME, GROUP_NAME)
+        try:
+            my_broker = broker.Broker(redis_connection_id=REDIS_CONN_ID)
+            my_broker.create_connection()
+            
+            my_broker.create_xgroup(TRANSFORM_STREAM_NAME, GROUP_NAME)
+
+        except Exception as e:
+            print(f'[{SUPERMARKET_ID}] - [{PIPELINE_NAME}] - [SETUP]')
+            print(e)
 
         return
     
     @task()
     def extract_supermarkets():
-        hook = PostgresHook(postgres_conn_id=POSTGRES_CONN_ID)
+        try:
+            hook = PostgresHook(postgres_conn_id=POSTGRES_CONN_ID)
 
-        sql = f'''
-            SELECT id, category_urls_container_url
-            FROM supermarkets
-            WHERE name LIKE '{SUPERMARKET_NAME}';
-        '''
+            sql = f'''
+                SELECT id, category_urls_container_url
+                FROM supermarkets
+                WHERE name LIKE '{SUPERMARKET_NAME}';
+            '''
 
-        result = hook.get_first(sql)
+            result = hook.get_first(sql)
 
-        if not result:
-            raise AirflowNotFoundException('No Superseis row found in `supermarkets` table.')
+            my_broker = broker.Broker(redis_connection_id=REDIS_CONN_ID)
+            my_broker.create_connection()
 
-        my_broker = broker.Broker(redis_connection_id=REDIS_CONN_ID)
-        my_broker.create_connection()
+            my_broker.write(TRANSFORM_STREAM_NAME, {
+                'supermarket_id': result[0], 
+                'url': result[1]
+            })
 
-        my_broker.write(TRANSFORM_STREAM_NAME, {
-            'supermarket_id': result[0], 
-            'url': result[1]
-        })
+        except Exception as e:
+            print(f'[{SUPERMARKET_ID}] - [{PIPELINE_NAME}] - [EXTRACT]')
+            print(e)
 
         return
 
@@ -77,38 +86,52 @@ def supermarket_superseis_scrape_category_urls_html():
         my_broker = broker.Broker(redis_connection_id=REDIS_CONN_ID)
         my_broker.create_connection()
 
-        while True:
-            batch = my_broker.read(TRANSFORM_STREAM_NAME, GROUP_NAME, CONSUMER_NAME, batch_size=BATCH_SIZE, block_time_ms=BLOCK_TIME_MS)
+        try:
+            while True:
+                batch = my_broker.read(TRANSFORM_STREAM_NAME, GROUP_NAME, CONSUMER_NAME, batch_size=BATCH_SIZE, block_time_ms=BLOCK_TIME_MS)
+            
+                if batch is None:
+                    break
+
+                for supermarket in batch:
+                    url = supermarket.get('url')
+                    supermarket_id = supermarket.get('supermarket_id')
+
+                    if not url:
+                        raise ValueError(
+                            f'Missing "category_urls_container_url" for supermarket ID {supermarket_id}'
+                        )
+                
+                    try:
+                        resp = requests.get(supermarket['url'], timeout=30)
+                        html = resp.text
+                    
+                    # except Exception as e:
+                    #     print(e)
+                    #     continue
+                    
+                    # except Exception as e:
+                    #     print(e)
+                    #     continue
+                    
+                    except Exception as e:
+                        print(e)
+                        continue
+                
+                    category_urls_html = {
+                        'supermarket_id': supermarket['supermarket_id'],
+                        'html': html,
+                        'url': supermarket['url'],
+                        'created_at': datetime.now().isoformat(),
+                    }
+                    
+                    # load
+                    my_broker.ack(TRANSFORM_STREAM_NAME, GROUP_NAME, *[supermarket['entry_id']])
+                    my_broker.write(OUTPUT_STREAM_NAME, category_urls_html)
         
-            if batch is None:
-                break
-
-            for supermarket in batch:
-                url = supermarket.get('url')
-                supermarket_id = supermarket.get('supermarket_id')
-
-                if not url:
-                    raise ValueError(
-                        f'Missing "category_urls_container_url" for supermarket ID {supermarket_id}'
-                    )
-            
-                try:
-                    resp = requests.get(url, timeout=30)
-                    resp.raise_for_status()
-                
-                except RequestException as e:
-                    print(f"Failed to fetch URL {url}: {e}")
-                    raise
-            
-                category_urls_html = {
-                    'supermarket_id': supermarket['supermarket_id'],
-                    'html': resp.text,
-                    'url': supermarket['url'],
-                    'created_at': datetime.now().isoformat(),
-                }
-                
-                my_broker.ack(TRANSFORM_STREAM_NAME, GROUP_NAME, *[supermarket['entry_id']])
-                my_broker.write(OUTPUT_STREAM_NAME, category_urls_html)
+        except Exception as e:
+            print(f'[{SUPERMARKET_ID}] - [{PIPELINE_NAME}] - [TRANSFORM]')
+            print(e)
 
         return
 

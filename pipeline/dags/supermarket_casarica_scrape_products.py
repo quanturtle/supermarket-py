@@ -1,5 +1,5 @@
 '''
-DAG: supermarket_casarica_scrape_products
+# supermarket_casarica_scrape_products
 PRODUCTS_HTML --> PRODUCTS
 '''
 import broker
@@ -48,47 +48,58 @@ PRODUCT_PRICE_ATTRS = [{}, {'id': 'producto-precio'}]
     default_args=DEFAULT_ARGS,
     tags=['casarica', 'etl'],
     catchup=False,
+    doc_md=__doc__
 )
 def supermarket_casarica_scrape_products():
     @task()
     def setup_transform_stream():
-        my_broker = broker.Broker(redis_connection_id=REDIS_CONN_ID)
-        my_broker.create_connection()
-        
-        my_broker.create_xgroup(TRANSFORM_STREAM_NAME, GROUP_NAME)
+        try:
+            my_broker = broker.Broker(redis_connection_id=REDIS_CONN_ID)
+            my_broker.create_connection()
+            
+            my_broker.create_xgroup(TRANSFORM_STREAM_NAME, GROUP_NAME)
+
+        except Exception as e:
+            print(f'[{SUPERMARKET_ID}] - [{PIPELINE_NAME}] - [SETUP]')
+            print(e)
 
         return
     
 
     @task()
     def extract_products_html():
-        hook = PostgresHook(postgres_conn_id=POSTGRES_CONN_ID)
+        try:
+            hook = PostgresHook(postgres_conn_id=POSTGRES_CONN_ID)
 
-        sql = f'''
-            SELECT supermarket_id, html, url
-            FROM products_html
-            WHERE supermarket_id = {SUPERMARKET_ID}
-            ORDER BY created_at;
-        '''
+            sql = f'''
+                SELECT supermarket_id, html, url
+                FROM products_html
+                WHERE supermarket_id = {SUPERMARKET_ID}
+                ORDER BY created_at;
+            '''
 
-        results = hook.get_records(sql)
+            results = hook.get_records(sql)
 
-        if not results:
-            raise AirflowNotFoundException('No product HTML content found for casarica in `products_html` table.')
+            if not results:
+                raise AirflowNotFoundException('No product HTML content found for casarica in `products_html` table.')
 
-        my_broker = broker.Broker(redis_connection_id=REDIS_CONN_ID)
-        my_broker.create_connection()
+            my_broker = broker.Broker(redis_connection_id=REDIS_CONN_ID)
+            my_broker.create_connection()
 
-        products_htmls = []
+            products_htmls = []
+            
+            for row in results:
+                products_htmls.append({
+                    'supermarket_id': row[0],
+                    'html': row[1],
+                    'url': row[2]
+                })
+
+            my_broker.write_pipeline(TRANSFORM_STREAM_NAME, *products_htmls)
         
-        for row in results:
-            products_htmls.append({
-                'supermarket_id': row[0],
-                'html': row[1],
-                'url': row[2]
-            })
-
-        my_broker.write_pipeline(TRANSFORM_STREAM_NAME, *products_htmls)
+        except Exception as e:
+            print(f'[{SUPERMARKET_ID}] - [{PIPELINE_NAME}] - [EXTRACT]')
+            print(e)
         
         return
 
@@ -98,79 +109,84 @@ def supermarket_casarica_scrape_products():
         my_broker = broker.Broker(redis_connection_id=REDIS_CONN_ID)
         my_broker.create_connection()
 
-        while True:
-            batch = my_broker.read(TRANSFORM_STREAM_NAME, GROUP_NAME, CONSUMER_NAME, batch_size=BATCH_SIZE, block_time_ms=BLOCK_TIME_MS)        
-        
-            if batch is None:
-                break
+        try:
+            while True:
+                batch = my_broker.read(TRANSFORM_STREAM_NAME, GROUP_NAME, CONSUMER_NAME, batch_size=BATCH_SIZE, block_time_ms=BLOCK_TIME_MS)        
+            
+                if batch is None:
+                    break
 
-            for product_html in batch:
-                soup = BeautifulSoup(product_html['html'], 'html.parser')
-                
-                product_details_container = soup.find(PRODUCT_CONTAINER_TAG, class_=PRODUCT_CONTAINER_CLASS)
-                
-                if not product_details_container:
+                for product_html in batch:
+                    soup = BeautifulSoup(product_html['html'], 'html.parser')
+                    
+                    product_details_container = soup.find(PRODUCT_CONTAINER_TAG, class_=PRODUCT_CONTAINER_CLASS)
+                    
+                    if not product_details_container:
+                        product = {
+                            'supermarket_id': product_html['supermarket_id'],
+                            'description': '',
+                            'sku': '',
+                            'price': '',
+                            'url': product_html['url'],
+                            'created_at': datetime.now().isoformat()
+                        }
+                        
+                        my_broker.ack(TRANSFORM_STREAM_NAME, GROUP_NAME, *[product_html['entry_id']])
+                        my_broker.write(OUTPUT_STREAM_NAME, product)
+                    
+                        continue
+
+                    try:        
+                        product_description = product_details_container.find(
+                            PRODUCT_NAME_TAG, class_=PRODUCT_NAME_CLASS
+                        ).text.strip().upper()
+                    
+                    except:
+                        product_description = product_html.get('description', '')
+
+                    try:
+                        product_sku = product_details_container.find(
+                            PRODUCT_SKU_TAG, class_=PRODUCT_SKU_CLASS, attrs=PRODUCT_SKU_ATTRS
+                        ).text.strip()
+                        product_sku = ''.join(filter(str.isdigit, product_sku))
+                    
+                    except:
+                        product_sku = ''
+
+                    try:
+                        product_price_container = product_details_container.find(
+                            PRODUCT_PRICE_TAG[0], class_=PRODUCT_PRICE_CLASS[0], attrs=PRODUCT_PRICE_ATTRS[0]
+                        )
+                        
+                        if product_price_container:
+                            product_price_span = product_price_container.find(
+                                PRODUCT_PRICE_TAG[1], class_=PRODUCT_PRICE_CLASS[1]
+                            ).text.strip()
+                            product_price = ''.join(filter(str.isdigit, product_price_span))
+                            product_price = int(product_price) if product_price else 0
+                        
+                        else:
+                            product_price = None
+                    
+                    except:
+                        product_price = None
+                    
                     product = {
                         'supermarket_id': product_html['supermarket_id'],
-                        'description': '',
-                        'sku': '',
-                        'price': '',
+                        'description': product_description,
+                        'sku': product_sku,
+                        'price': product_price,
                         'url': product_html['url'],
                         'created_at': datetime.now().isoformat()
                     }
-                    
+
+                    # load
                     my_broker.ack(TRANSFORM_STREAM_NAME, GROUP_NAME, *[product_html['entry_id']])
                     my_broker.write(OUTPUT_STREAM_NAME, product)
-                
-                    continue
-
-                try:        
-                    product_description = product_details_container.find(
-                        PRODUCT_NAME_TAG, class_=PRODUCT_NAME_CLASS
-                    ).text.strip().upper()
-                
-                except:
-                    product_description = product_html.get('description', '')
-
-                try:
-                    product_sku = product_details_container.find(
-                        PRODUCT_SKU_TAG, class_=PRODUCT_SKU_CLASS, attrs=PRODUCT_SKU_ATTRS
-                    ).text.strip()
-                    product_sku = ''.join(filter(str.isdigit, product_sku))
-                
-                except:
-                    product_sku = ''
-
-                try:
-                    product_price_container = product_details_container.find(
-                        PRODUCT_PRICE_TAG[0], class_=PRODUCT_PRICE_CLASS[0], attrs=PRODUCT_PRICE_ATTRS[0]
-                    )
-                    
-                    if product_price_container:
-                        product_price_span = product_price_container.find(
-                            PRODUCT_PRICE_TAG[1], class_=PRODUCT_PRICE_CLASS[1]
-                        ).text.strip()
-                        product_price = ''.join(filter(str.isdigit, product_price_span))
-                        product_price = int(product_price) if product_price else 0
-                    
-                    else:
-                        product_price = None
-                
-                except:
-                    product_price = None
-                
-                product = {
-                    'supermarket_id': product_html['supermarket_id'],
-                    'description': product_description,
-                    'sku': product_sku,
-                    'price': product_price,
-                    'url': product_html['url'],
-                    'created_at': datetime.now().isoformat()
-                }
-
-                # load
-                my_broker.ack(TRANSFORM_STREAM_NAME, GROUP_NAME, *[product_html['entry_id']])
-                my_broker.write(OUTPUT_STREAM_NAME, product)
+        
+        except Exception as e:
+            print(f'[{SUPERMARKET_ID}] - [{PIPELINE_NAME}] - [TRANSFORM]')
+            print(e)
                 
         return
 

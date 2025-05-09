@@ -1,5 +1,5 @@
 '''
-DAG: supermarket_biggie_scrape_category_urls_html
+# supermarket_biggie_scrape_category_urls_html
 SUPERMARKETS --> CATEGORY_URLS_HTML
 '''
 import broker
@@ -26,7 +26,7 @@ GROUP_NAME = 'product_db_inserters'
 CONSUMER_NAME = 'transformer'
 
 PIPELINE_NAME = 'scrape_category_urls_html'
-SUPERMARKET_ID = SupermarketID.BIGGIE
+SUPERMARKET_ID = SupermarketID.BIGGIE.value
 SUPERMARKET_NAME = SupermarketName.BIGGIE.value
 BATCH_SIZE = 20
 BLOCK_TIME_MS = 1_000
@@ -36,6 +36,7 @@ BLOCK_TIME_MS = 1_000
     default_args=DEFAULT_ARGS,
     tags=['biggie', 'etl'],
     catchup=False,
+    doc_md=__doc__
 )
 def supermarket_biggie_scrape_category_urls_html():
     @task()
@@ -119,6 +120,7 @@ def supermarket_biggie_scrape_category_urls_html():
                         'created_at': datetime.now().isoformat(),
                     }
                     
+                    # load
                     my_broker.ack(TRANSFORM_STREAM_NAME, GROUP_NAME, *[supermarket['entry_id']])
                     my_broker.write(OUTPUT_STREAM_NAME, category_urls_html)
         

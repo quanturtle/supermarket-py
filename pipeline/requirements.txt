@@ -2,3 +2,4 @@
 apache-airflow-providers-postgres
 apache-airflow-providers-redis
 beautifulsoup4
+openai

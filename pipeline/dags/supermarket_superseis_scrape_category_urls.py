@@ -1,5 +1,5 @@
 '''
-DAG: supermarket_superseis_scrape_category_urls
+# supermarket_superseis_scrape_category_urls
 CATEGORY_URLS_HTML --> CATEGORY_URLS
 '''
 import broker
@@ -36,42 +36,50 @@ CATEGORY_STRING_IN_URL = 'category'
     default_args=DEFAULT_ARGS,
     tags=['superseis', 'etl'],
     catchup=False,
+    doc_md=__doc__
 )
 def supermarket_superseis_scrape_category_urls():
     @task()
     def setup_transform_stream():
-        my_broker = broker.Broker(redis_connection_id=REDIS_CONN_ID)
-        my_broker.create_connection()
-        
-        my_broker.create_xgroup(TRANSFORM_STREAM_NAME, GROUP_NAME)
+        try:
+            my_broker = broker.Broker(redis_connection_id=REDIS_CONN_ID)
+            my_broker.create_connection()
+            
+            my_broker.create_xgroup(TRANSFORM_STREAM_NAME, GROUP_NAME)
+
+        except Exception as e:
+            print(f'[{SUPERMARKET_ID}] - [{PIPELINE_NAME}] - [SETUP]')
+            print(e)
 
         return
     
 
     @task()
     def extract_category_urls_html():
-        hook = PostgresHook(postgres_conn_id=POSTGRES_CONN_ID)
+        try:
+            hook = PostgresHook(postgres_conn_id=POSTGRES_CONN_ID)
 
-        sql = f'''
-            SELECT supermarket_id, html, url
-            FROM category_urls_html
-            WHERE supermarket_id = {SUPERMARKET_ID}
-            ORDER BY created_at;
-        '''
+            sql = f'''
+                SELECT supermarket_id, html, url
+                FROM category_urls_html
+                WHERE supermarket_id = {SUPERMARKET_ID}
+                ORDER BY created_at;
+            '''
 
-        result = hook.get_first(sql)
+            result = hook.get_first(sql)
 
-        if not result:
-            raise AirflowNotFoundException('No category URLs found for Superseis in `category_urls_html` table.')
+            my_broker = broker.Broker(redis_connection_id=REDIS_CONN_ID)
+            my_broker.create_connection()
 
-        my_broker = broker.Broker(redis_connection_id=REDIS_CONN_ID)
-        my_broker.create_connection()
+            my_broker.write(TRANSFORM_STREAM_NAME, {
+                'supermarket_id': result[0], 
+                'html': result[1], 
+                'url': result[2]
+            })
 
-        my_broker.write(TRANSFORM_STREAM_NAME, {
-            'supermarket_id': result[0], 
-            'html': result[1], 
-            'url': result[2]
-        })
+        except Exception as e:
+            print(f'[{SUPERMARKET_ID}] - [{PIPELINE_NAME}] - [EXTRACT]')
+            print(e)
 
         return
 
@@ -81,31 +89,37 @@ def supermarket_superseis_scrape_category_urls():
         my_broker = broker.Broker(redis_connection_id=REDIS_CONN_ID)
         my_broker.create_connection()
 
-        while True:
-            batch = my_broker.read(TRANSFORM_STREAM_NAME, GROUP_NAME, CONSUMER_NAME, batch_size=BATCH_SIZE, block_time_ms=BLOCK_TIME_MS)        
-        
-            if batch is None:
-                break
-        
-            for category_urls_html in batch:
-                soup = BeautifulSoup(category_urls_html['html'], 'html.parser')
-                links = soup.find_all('a', href=True)
-                
-                category_urls = []
-                
-                for link in links:
-                    if link['href'] != '#' and CATEGORY_STRING_IN_URL in link['href']:
-                        category_url = {
-                            'supermarket_id': category_urls_html['supermarket_id'],
-                            'description': link.get_text(strip=True),
-                            'url': link['href'],
-                            'created_at': datetime.now().isoformat()
-                        }
-                        
-                        category_urls.append(category_url)
+        try:
+            while True:
+                batch = my_broker.read(TRANSFORM_STREAM_NAME, GROUP_NAME, CONSUMER_NAME, batch_size=BATCH_SIZE, block_time_ms=BLOCK_TIME_MS)        
+            
+                if batch is None:
+                    break
+            
+                for category_urls_html in batch:
+                    soup = BeautifulSoup(category_urls_html['html'], 'html.parser')
+                    links = soup.find_all('a', href=True)
+                    
+                    category_urls = []
+                    
+                    for link in links:
+                        if link['href'] != '#' and CATEGORY_STRING_IN_URL in link['href']:
+                            category_url = {
+                                'supermarket_id': category_urls_html['supermarket_id'],
+                                'description': link.get_text(strip=True),
+                                'url': link['href'],
+                                'created_at': datetime.now().isoformat()
+                            }
+                            
+                            category_urls.append(category_url)
 
-                my_broker.ack(TRANSFORM_STREAM_NAME, GROUP_NAME, *[category_urls_html['entry_id']])
-                my_broker.write_pipeline(OUTPUT_STREAM_NAME, *category_urls)
+                    # load
+                    my_broker.ack(TRANSFORM_STREAM_NAME, GROUP_NAME, *[category_urls_html['entry_id']])
+                    my_broker.write_pipeline(OUTPUT_STREAM_NAME, *category_urls)
+        
+        except Exception as e:
+            print(f'[{SUPERMARKET_ID}] - [{PIPELINE_NAME}] - [TRANSFORM]')
+            print(e)
         
         return
 

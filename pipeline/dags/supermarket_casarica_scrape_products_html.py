@@ -1,5 +1,5 @@
 '''
-DAG: supermarket_casarica_scrape_products_html
+# supermarket_casarica_scrape_products_html
 PRODUCT_URLS --> PRODUCTS_HTML
 '''
 import time
@@ -38,46 +38,57 @@ DELAY_SECONDS = 0.5
     default_args=DEFAULT_ARGS,
     tags=['casarica', 'etl'],
     catchup=False,
+    doc_md=__doc__
 )
 def supermarket_casarica_scrape_products_html():
     @task()
     def setup_transform_stream():
-        my_broker = broker.Broker(redis_connection_id=REDIS_CONN_ID)
-        my_broker.create_connection()
-        
-        my_broker.create_xgroup(TRANSFORM_STREAM_NAME, GROUP_NAME)
+        try:
+            my_broker = broker.Broker(redis_connection_id=REDIS_CONN_ID)
+            my_broker.create_connection()
+            
+            my_broker.create_xgroup(TRANSFORM_STREAM_NAME, GROUP_NAME)
+
+        except Exception as e:
+            print(f'[{SUPERMARKET_ID}] - [{PIPELINE_NAME}] - [SETUP]')
+            print(e)
 
         return
     
     
     @task()
     def extract_product_urls():
-        hook = PostgresHook(postgres_conn_id=POSTGRES_CONN_ID)
+        try:
+            hook = PostgresHook(postgres_conn_id=POSTGRES_CONN_ID)
 
-        sql = f'''
-            SELECT supermarket_id, url
-            FROM product_urls
-            WHERE supermarket_id = {SUPERMARKET_ID}
-            ORDER BY created_at;
-        '''
+            sql = f'''
+                SELECT supermarket_id, url
+                FROM product_urls
+                WHERE supermarket_id = {SUPERMARKET_ID}
+                ORDER BY created_at;
+            '''
 
-        results = hook.get_records(sql)
+            results = hook.get_records(sql)
 
-        if not results:
-            raise AirflowNotFoundException('No product URLs found for casarica in `product_urls` table.')
+            if not results:
+                raise AirflowNotFoundException('No product URLs found for casarica in `product_urls` table.')
 
-        my_broker = broker.Broker(redis_connection_id=REDIS_CONN_ID)
-        my_broker.create_connection()
+            my_broker = broker.Broker(redis_connection_id=REDIS_CONN_ID)
+            my_broker.create_connection()
 
-        product_urls = []
+            product_urls = []
+            
+            for row in results:
+                product_urls.append({
+                    'supermarket_id': row[0],
+                    'url': row[1]
+                })
+
+            my_broker.write_pipeline(TRANSFORM_STREAM_NAME, *product_urls)
         
-        for row in results:
-            product_urls.append({
-                'supermarket_id': row[0],
-                'url': row[1]
-            })
-
-        my_broker.write_pipeline(TRANSFORM_STREAM_NAME, *product_urls)
+        except Exception as e:
+            print(f'[{SUPERMARKET_ID}] - [{PIPELINE_NAME}] - [EXTRACT]')
+            print(e)
 
         return
 
@@ -87,34 +98,45 @@ def supermarket_casarica_scrape_products_html():
         my_broker = broker.Broker(redis_connection_id=REDIS_CONN_ID)
         my_broker.create_connection()
 
-        while True:
-            batch = my_broker.read(TRANSFORM_STREAM_NAME, GROUP_NAME, CONSUMER_NAME, batch_size=BATCH_SIZE, block_time_ms=BLOCK_TIME_MS)        
-        
-            if batch is None:
-                break
+        try:
+            while True:
+                batch = my_broker.read(TRANSFORM_STREAM_NAME, GROUP_NAME, CONSUMER_NAME, batch_size=BATCH_SIZE, block_time_ms=BLOCK_TIME_MS)        
+            
+                if batch is None:
+                    break
 
-            for product_url in batch:
-                try:
-                    time.sleep(DELAY_SECONDS)
+                for product_url in batch:
+                    try:
+                        time.sleep(DELAY_SECONDS)
+                        response = requests.get(product_url['url'], timeout=30)
+                        html_content = response.text
                     
-                    response = requests.get(product_url['url'], timeout=30)
-                    response.raise_for_status()
-                    html_content = response.text
-                    
+                    # except Exception as e:
+                    #     print(e)
+                    #     continue
+
+                    # except Exception as e:
+                    #     print(e)
+                    #     continue
+
+                    except Exception as e:
+                        print(e)
+                        continue
+
                     product_html = {
                         'supermarket_id': product_url['supermarket_id'],
                         'html': html_content,
                         'url': product_url['url'],
                         'created_at': datetime.now().isoformat()
                     }
-                    
-                except RequestException as e:
-                    print(f'Failed to fetch URL {product_url['url']}: {e}')
-                    
-                    return {'error': str(e)}
 
-                my_broker.ack(TRANSFORM_STREAM_NAME, GROUP_NAME, *[product_url['entry_id']])
-                my_broker.write(OUTPUT_STREAM_NAME, product_html)
+                    # load
+                    my_broker.ack(TRANSFORM_STREAM_NAME, GROUP_NAME, *[product_url['entry_id']])
+                    my_broker.write(OUTPUT_STREAM_NAME, product_html)
+        
+        except Exception as e:
+            print(f'[{SUPERMARKET_ID}] - [{PIPELINE_NAME}] - [TRANSFORM]')
+            print(e)
         
         return
 

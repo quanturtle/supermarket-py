@@ -1,5 +1,5 @@
 '''
-DAG: supermarket_biggie_scrape_products
+# supermarket_biggie_scrape_products
 PRODUCTS_HTML --> PRODUCTS
 
 this is a special case, the API response from product_urls_html is enough to populate the products table
@@ -40,47 +40,55 @@ PRODUCT_PRICE = 'price'
     default_args=DEFAULT_ARGS,
     tags=['biggie', 'etl'],
     catchup=False,
+    doc_md=__doc__
 )
 def supermarket_biggie_scrape_products():
     @task()
     def setup_transform_stream():
-        my_broker = broker.Broker(redis_connection_id=REDIS_CONN_ID)
-        my_broker.create_connection()
-        
-        my_broker.create_xgroup(TRANSFORM_STREAM_NAME, GROUP_NAME)
+        try:
+            my_broker = broker.Broker(redis_connection_id=REDIS_CONN_ID)
+            my_broker.create_connection()
+            
+            my_broker.create_xgroup(TRANSFORM_STREAM_NAME, GROUP_NAME)
+
+        except Exception as e:
+            print(f'[{SUPERMARKET_ID}] - [{PIPELINE_NAME}] - [SETUP]')
+            print(e)
 
         return
     
 
     @task()
     def extract_products_html():
-        hook = PostgresHook(postgres_conn_id=POSTGRES_CONN_ID)
+        try:
+            hook = PostgresHook(postgres_conn_id=POSTGRES_CONN_ID)
 
-        sql = f'''
-            SELECT supermarket_id, html, url
-            FROM product_urls_html
-            WHERE supermarket_id = {SUPERMARKET_ID}
-            ORDER BY created_at;
-        '''
+            sql = f'''
+                SELECT supermarket_id, html, url
+                FROM product_urls_html
+                WHERE supermarket_id = {SUPERMARKET_ID}
+                ORDER BY created_at;
+            '''
 
-        results = hook.get_records(sql)
+            results = hook.get_records(sql)
 
-        if not results:
-            raise AirflowNotFoundException('No product HTML content found for biggie in `products_html` table.')
+            my_broker = broker.Broker(redis_connection_id=REDIS_CONN_ID)
+            my_broker.create_connection()
 
-        my_broker = broker.Broker(redis_connection_id=REDIS_CONN_ID)
-        my_broker.create_connection()
+            products_htmls = []
+            
+            for row in results:
+                products_htmls.append({
+                    'supermarket_id': row[0],
+                    'html': row[1],
+                    'url': row[2]
+                })
 
-        products_htmls = []
-        
-        for row in results:
-            products_htmls.append({
-                'supermarket_id': row[0],
-                'html': row[1],
-                'url': row[2]
-            })
+            my_broker.write_pipeline(TRANSFORM_STREAM_NAME, *products_htmls)
 
-        my_broker.write_pipeline(TRANSFORM_STREAM_NAME, *products_htmls)
+        except Exception as e:
+            print(f'[{SUPERMARKET_ID}] - [{PIPELINE_NAME}] - [EXTRACT]')
+            print(e)
         
         return
 
@@ -90,38 +98,43 @@ def supermarket_biggie_scrape_products():
         my_broker = broker.Broker(redis_connection_id=REDIS_CONN_ID)
         my_broker.create_connection()
 
-        while True:
-            batch = my_broker.read(TRANSFORM_STREAM_NAME, GROUP_NAME, CONSUMER_NAME, batch_size=BATCH_SIZE, block_time_ms=BLOCK_TIME_MS)        
-        
-            if batch is None:
-                break
-
-            for product_htmls in batch:
-                products = []
-                products_json = json.loads(product_htmls['html'])
-                
-                for item in products_json:
-                    url_suffix = item['name'].replace('.', '') \
-				                .replace(' ', '-') \
-				                .replace('´', '') \
-                                .replace('‘', '\'') \
-                                .lower() + '-' + item['code']
-                    
-                    product = {
-                        'supermarket_id': product_htmls['supermarket_id'],
-                        'description': item['name'].upper(),
-                        'sku': item['code'],
-                        'price': item['price'],
-                        'url': f'https://biggie.com.py/item/{url_suffix}',
-                        'created_at': datetime.now().isoformat()
-                    }
-
-                    products.append(product)
+        try:
+            while True:
+                batch = my_broker.read(TRANSFORM_STREAM_NAME, GROUP_NAME, CONSUMER_NAME, batch_size=BATCH_SIZE, block_time_ms=BLOCK_TIME_MS)        
             
-                # load
-                my_broker.ack(TRANSFORM_STREAM_NAME, GROUP_NAME, *[product_htmls['entry_id']])
-                my_broker.write_pipeline(OUTPUT_STREAM_NAME, *products)
+                if batch is None:
+                    break
+
+                for product_htmls in batch:
+                    products = []
+                    products_json = json.loads(product_htmls['html'])
+                    
+                    for item in products_json:
+                        url_suffix = item['name'].replace('.', '') \
+                                    .replace(' ', '-') \
+                                    .replace('´', '') \
+                                    .replace('‘', '\'') \
+                                    .lower() + '-' + item['code']
+                        
+                        product = {
+                            'supermarket_id': product_htmls['supermarket_id'],
+                            'description': item['name'].upper(),
+                            'sku': item['code'],
+                            'price': item['price'],
+                            'url': f'https://biggie.com.py/item/{url_suffix}',
+                            'created_at': datetime.now().isoformat()
+                        }
+
+                        products.append(product)
                 
+                    # load
+                    my_broker.ack(TRANSFORM_STREAM_NAME, GROUP_NAME, *[product_htmls['entry_id']])
+                    my_broker.write_pipeline(OUTPUT_STREAM_NAME, *products)
+        
+        except Exception as e:
+            print(f'[{SUPERMARKET_ID}] - [{PIPELINE_NAME}] - [TRANSFORM]')
+            print(e)
+
         return
 
 

@@ -9,7 +9,6 @@ import broker
 from datetime import datetime
 from constants import *
 from airflow.decorators import dag, task
-from airflow.exceptions import AirflowNotFoundException
 from airflow.providers.postgres.hooks.postgres import PostgresHook
 
 

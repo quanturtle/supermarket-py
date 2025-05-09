@@ -7,9 +7,7 @@ import broker
 import requests
 from constants import *
 from datetime import datetime
-from requests.exceptions import RequestException
 from airflow.decorators import dag, task
-from airflow.exceptions import AirflowNotFoundException
 from airflow.providers.postgres.hooks.postgres import PostgresHook
 
 
@@ -69,9 +67,6 @@ def supermarket_casarica_scrape_products_html():
             '''
 
             results = hook.get_records(sql)
-
-            if not results:
-                raise AirflowNotFoundException('No product URLs found for casarica in `product_urls` table.')
 
             my_broker = broker.Broker(redis_connection_id=REDIS_CONN_ID)
             my_broker.create_connection()

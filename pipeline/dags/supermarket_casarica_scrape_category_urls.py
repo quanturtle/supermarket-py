@@ -7,7 +7,6 @@ from constants import *
 from datetime import datetime
 from bs4 import BeautifulSoup
 from airflow.decorators import dag, task
-from airflow.exceptions import AirflowNotFoundException
 from airflow.providers.postgres.hooks.postgres import PostgresHook
 
 

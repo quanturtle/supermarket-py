@@ -7,7 +7,6 @@ import broker
 import requests
 from constants import *
 from datetime import datetime
-from requests.exceptions import RequestException
 from airflow.decorators import dag, task
 from airflow.providers.postgres.hooks.postgres import PostgresHook
 

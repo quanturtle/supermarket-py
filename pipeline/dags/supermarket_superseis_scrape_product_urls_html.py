@@ -9,9 +9,7 @@ from constants import *
 from bs4 import BeautifulSoup
 from datetime import datetime
 from collections import deque
-from requests.exceptions import RequestException
 from airflow.decorators import dag, task
-from airflow.exceptions import AirflowNotFoundException
 from airflow.providers.postgres.hooks.postgres import PostgresHook
 
 

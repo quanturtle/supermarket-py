@@ -2,12 +2,14 @@
 # supermarket_biggie_scrape_product_urls_html_biggie
 CATEGORY_URLS --> PRODUCT_URLS_HTML
 '''
-import broker
-from datetime import datetime
+import time
 import json
+import broker
 import requests
 from constants import *
+from datetime import datetime
 from collections import deque
+from requests.exceptions import Timeout, InvalidURL, HTTPError
 from airflow.decorators import dag, task
 from airflow.providers.postgres.hooks.postgres import PostgresHook
 
@@ -22,13 +24,17 @@ REDIS_CONN_ID = 'my-redis'
 
 OUTPUT_STREAM_NAME = 'product_urls_html_stream'
 TRANSFORM_STREAM_NAME = 'biggie_transform_product_urls_html_stream'
+ERROR_REQUEST_STREAM_NAME = 'error_request_stream'
 GROUP_NAME = 'product_db_inserters'
 CONSUMER_NAME = 'transformer'
 
 PIPELINE_NAME = 'scrape_product_urls_html_biggie'
 SUPERMARKET_ID = SupermarketID.BIGGIE.value
+
 BATCH_SIZE = 20
 BLOCK_TIME_MS = 1_000
+DELAY_SECONDS = 0.5
+
 
 @dag(
     default_args=DEFAULT_ARGS,
@@ -106,18 +112,29 @@ def supermarket_biggie_scrape_product_urls_html():
                         visiting_url = queue.popleft()
                         
                         try:
+                            time.sleep(DELAY_SECONDS)
                             response = requests.get(visiting_url, timeout=30)
-                            response.raise_for_status()
                             api_response = response.json()['items']
                         
-                        # except:
-                        #     print('Error getting Biggie response')
+                        except Timeout as to:
+                            print(to)
+                            my_broker.write(ERROR_REQUEST_STREAM_NAME, {'url': visiting_url, 'exception': 'request timed out', 'detail': to})
+                            continue
 
-                        # except:
-                        #     print('Error getting Biggie response')
+                        except InvalidURL as iu:
+                            print(iu)
+                            my_broker.write(ERROR_REQUEST_STREAM_NAME, {'url': visiting_url, 'exception': 'invalid url', 'detail': iu})
+                            continue
 
-                        except:
-                            print('Error getting Biggie response')
+                        except HTTPError as ht:
+                            print(ht)
+                            my_broker.write(ERROR_REQUEST_STREAM_NAME, {'url': visiting_url, 'exception': 'http error', 'detail': ht})
+                            continue
+
+                        except Exception as e:
+                            print(e)
+                            my_broker.write(ERROR_REQUEST_STREAM_NAME, {'url': visiting_url, 'exception': 'uncaught exception', 'detail': e})
+                            continue
 
                         if len(api_response) < 1:
                             break

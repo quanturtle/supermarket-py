@@ -2,10 +2,12 @@
 # supermarket_superseis_scrape_category_urls_html
 SUPERMARKETS --> CATEGORY_URLS_HTML
 '''
+import time
 import broker
 import requests
 from constants import *
 from datetime import datetime
+from requests.exceptions import Timeout, InvalidURL, HTTPError
 from airflow.decorators import dag, task
 from airflow.providers.postgres.hooks.postgres import PostgresHook
 
@@ -20,14 +22,17 @@ REDIS_CONN_ID = 'my-redis'
 
 OUTPUT_STREAM_NAME = 'category_urls_html_stream'
 TRANSFORM_STREAM_NAME = 'superseis_transform_category_urls_html_stream'
+ERROR_REQUEST_STREAM_NAME = 'error_request_stream'
 GROUP_NAME = 'product_db_inserters'
 CONSUMER_NAME = 'transformer'
 
 PIPELINE_NAME = 'scrape_category_urls_html'
 SUPERMARKET_ID = SupermarketID.SUPERSEIS.value
 SUPERMARKET_NAME = SupermarketName.SUPERSEIS.value
+
 BATCH_SIZE = 20
 BLOCK_TIME_MS = 1_000
+DELAY_SECONDS = 0.5
 
 
 @dag(
@@ -91,34 +96,34 @@ def supermarket_superseis_scrape_category_urls_html():
                 if batch is None:
                     break
 
-                for supermarket in batch:
-                    url = supermarket.get('url')
-                    supermarket_id = supermarket.get('supermarket_id')
-
-                    if not url:
-                        raise ValueError(
-                            f'Missing "category_urls_container_url" for supermarket ID {supermarket_id}'
-                        )
-                
+                for supermarket in batch:                
                     try:
                         resp = requests.get(supermarket['url'], timeout=30)
-                        html = resp.text
+                        html_content = resp.text
                     
-                    # except Exception as e:
-                    #     print(e)
-                    #     continue
-                    
-                    # except Exception as e:
-                    #     print(e)
-                    #     continue
-                    
+                    except Timeout as to:
+                        print(to)
+                        my_broker.write(ERROR_REQUEST_STREAM_NAME, {'url': supermarket['url'], 'exception': 'request timed out', 'detail': to})
+                        continue
+
+                    except InvalidURL as iu:
+                        print(iu)
+                        my_broker.write(ERROR_REQUEST_STREAM_NAME, {'url': supermarket['url'], 'exception': 'invalid url', 'detail': iu})
+                        continue
+
+                    except HTTPError as ht:
+                        print(ht)
+                        my_broker.write(ERROR_REQUEST_STREAM_NAME, {'url': supermarket['url'], 'exception': 'http error', 'detail': ht})
+                        continue
+
                     except Exception as e:
                         print(e)
+                        my_broker.write(ERROR_REQUEST_STREAM_NAME, {'url': supermarket['url'], 'exception': 'uncaught exception', 'detail': e})
                         continue
                 
                     category_urls_html = {
                         'supermarket_id': supermarket['supermarket_id'],
-                        'html': html,
+                        'html': html_content,
                         'url': supermarket['url'],
                         'created_at': datetime.now().isoformat(),
                     }

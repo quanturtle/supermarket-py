@@ -9,6 +9,7 @@ from constants import *
 from bs4 import BeautifulSoup
 from datetime import datetime
 from collections import deque
+from requests.exceptions import Timeout, InvalidURL, HTTPError
 from airflow.decorators import dag, task
 from airflow.providers.postgres.hooks.postgres import PostgresHook
 
@@ -23,6 +24,7 @@ REDIS_CONN_ID = 'my-redis'
 
 OUTPUT_STREAM_NAME = 'product_urls_html_stream'
 TRANSFORM_STREAM_NAME = 'superseis_transform_product_urls_html_stream'
+ERROR_REQUEST_STREAM_NAME = 'error_request_stream'
 GROUP_NAME = 'product_db_inserters'
 CONSUMER_NAME = 'transformer'
 
@@ -118,8 +120,24 @@ def supermarket_superseis_scrape_product_urls_html():
                             response = requests.get(visiting_url, timeout=30)
                             html_content = response.text
 
+                        except Timeout as to:
+                            print(to)
+                            my_broker.write(ERROR_REQUEST_STREAM_NAME, {'url': visiting_url, 'exception': 'request timed out', 'detail': to})
+                            continue
+
+                        except InvalidURL as iu:
+                            print(iu)
+                            my_broker.write(ERROR_REQUEST_STREAM_NAME, {'url': visiting_url, 'exception': 'invalid url', 'detail': iu})
+                            continue
+
+                        except HTTPError as ht:
+                            print(ht)
+                            my_broker.write(ERROR_REQUEST_STREAM_NAME, {'url': visiting_url, 'exception': 'http error', 'detail': ht})
+                            continue
+
                         except Exception as e:
                             print(e)
+                            my_broker.write(ERROR_REQUEST_STREAM_NAME, {'url': visiting_url, 'exception': 'uncaught exception', 'detail': e})
                             continue
 
                         soup = BeautifulSoup(html_content, 'html.parser')

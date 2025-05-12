@@ -25,7 +25,8 @@ CONSUMER_NAME = 'transformer'
 
 PIPELINE_NAME = 'scrape_products'
 SUPERMARKET_ID = SupermarketID.CASA_RICA.value
-BATCH_SIZE = 20
+CURSOR_BATCH_SIZE = 500
+WORKER_BATCH_SIZE = 20
 BLOCK_TIME_MS = 1_000
 
 PRODUCT_CONTAINER_TAG = 'div'
@@ -67,37 +68,40 @@ def supermarket_casarica_scrape_products():
 
     @task()
     def extract_products_html():
-        try:
-            hook = PostgresHook(postgres_conn_id=POSTGRES_CONN_ID)
-
-            sql = f'''
-                SELECT supermarket_id, html, url
-                FROM products_html
-                WHERE supermarket_id = {SUPERMARKET_ID}
-                ORDER BY created_at;
-            '''
-
-            results = hook.get_records(sql)
-
-            my_broker = broker.Broker(redis_connection_id=REDIS_CONN_ID)
-            my_broker.create_connection()
-
-            products_htmls = []
-            
-            for row in results:
-                products_htmls.append({
-                    'supermarket_id': row[0],
-                    'html': row[1],
-                    'url': row[2]
-                })
-
-            my_broker.write_pipeline(TRANSFORM_STREAM_NAME, *products_htmls)
+        hook = PostgresHook(postgres_conn_id=POSTGRES_CONN_ID)
         
+        my_broker = broker.Broker(redis_connection_id=REDIS_CONN_ID)
+        my_broker.create_connection()
+
+        try:
+            with hook.get_conn() as conn, conn.cursor(name="products_cursor") as cur:
+                cur.itersize = CURSOR_BATCH_SIZE
+                cur.execute(
+                    '''
+                    SELECT supermarket_id, html, url
+                    FROM products_html
+                    WHERE supermarket_id = %s
+                    ORDER BY created_at
+                    ''',
+                    (SUPERMARKET_ID,),
+                )
+
+                while True:
+                    rows = cur.fetchmany(CURSOR_BATCH_SIZE)
+                    
+                    if not rows:
+                        break
+
+                    products_htmls = [
+                        {'supermarket_id': row[0], 'html': row[1], 'url': row[2]}
+                        for row in rows
+                    ]
+                    
+                    my_broker.write_pipeline(TRANSFORM_STREAM_NAME, *products_htmls)
+
         except Exception as e:
             print(f'[{SUPERMARKET_ID}] - [{PIPELINE_NAME}] - [EXTRACT]')
             print(e)
-        
-        return
 
 
     @task()
@@ -107,7 +111,7 @@ def supermarket_casarica_scrape_products():
 
         try:
             while True:
-                batch = my_broker.read(TRANSFORM_STREAM_NAME, GROUP_NAME, CONSUMER_NAME, batch_size=BATCH_SIZE, block_time_ms=BLOCK_TIME_MS)        
+                batch = my_broker.read(TRANSFORM_STREAM_NAME, GROUP_NAME, CONSUMER_NAME, batch_size=WORKER_BATCH_SIZE, block_time_ms=BLOCK_TIME_MS)        
             
                 if batch is None:
                     break

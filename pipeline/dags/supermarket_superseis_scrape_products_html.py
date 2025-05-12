@@ -7,6 +7,7 @@ import broker
 import requests
 from constants import *
 from datetime import datetime
+from requests.exceptions import Timeout, InvalidURL, HTTPError
 from airflow.decorators import dag, task
 from airflow.providers.postgres.hooks.postgres import PostgresHook
 
@@ -21,14 +22,15 @@ REDIS_CONN_ID = 'my-redis'
 
 OUTPUT_STREAM_NAME = 'products_html_stream'
 TRANSFORM_STREAM_NAME = 'superseis_transform_products_html_stream'
+ERROR_REQUEST_STREAM_NAME = 'error_request_stream'
 GROUP_NAME = 'product_db_inserters'
 CONSUMER_NAME = 'transformer'
 
 PIPELINE_NAME = 'scrape_products_html'
 SUPERMARKET_ID = SupermarketID.SUPERSEIS.value
+
 BATCH_SIZE = 20
 BLOCK_TIME_MS = 1_000
-
 DELAY_SECONDS = 0.5
 
 
@@ -106,16 +108,24 @@ def supermarket_superseis_scrape_products_html():
                         response = requests.get(product_url['url'], timeout=30)
                         html_content = response.text
                         
-                    # except Exception as e:
-                    #     print(e)
-                    #     continue
-                    
-                    # except Exception as e:
-                    #     print(e)
-                    #     continue
-                    
+                    except Timeout as to:
+                        print(to)
+                        my_broker.write(ERROR_REQUEST_STREAM_NAME, {'url': product_url['url'], 'exception': 'request timed out', 'detail': to})
+                        continue
+
+                    except InvalidURL as iu:
+                        print(iu)
+                        my_broker.write(ERROR_REQUEST_STREAM_NAME, {'url': product_url['url'], 'exception': 'invalid url', 'detail': iu})
+                        continue
+
+                    except HTTPError as ht:
+                        print(ht)
+                        my_broker.write(ERROR_REQUEST_STREAM_NAME, {'url': product_url['url'], 'exception': 'http error', 'detail': ht})
+                        continue
+
                     except Exception as e:
                         print(e)
+                        my_broker.write(ERROR_REQUEST_STREAM_NAME, {'url': product_url['url'], 'exception': 'uncaught exception', 'detail': e})
                         continue
                     
                     product_html = {

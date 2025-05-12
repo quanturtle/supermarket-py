@@ -2,6 +2,7 @@
 # supermarket_biggie_scrape_category_urls_html
 SUPERMARKETS --> CATEGORY_URLS_HTML
 '''
+import time
 import broker
 import requests
 from constants import *
@@ -28,8 +29,10 @@ CONSUMER_NAME = 'transformer'
 PIPELINE_NAME = 'scrape_category_urls_html'
 SUPERMARKET_ID = SupermarketID.BIGGIE.value
 SUPERMARKET_NAME = SupermarketName.BIGGIE.value
+
 BATCH_SIZE = 20
 BLOCK_TIME_MS = 1_000
+DELAY_SECONDS = 0.5
 
 
 @dag(
@@ -82,7 +85,7 @@ def supermarket_biggie_scrape_category_urls_html():
 
 
     @task()
-    def transform_supermarkets_to_category_urls_html():
+    def transform_supermarkets_to_category_urls_html(worker_id: int):
         my_broker = broker.Broker(redis_connection_id=REDIS_CONN_ID)
         my_broker.create_connection()
 
@@ -95,27 +98,33 @@ def supermarket_biggie_scrape_category_urls_html():
 
                 for supermarket in batch:
                     try:
+                        time.sleep(DELAY_SECONDS)
                         resp = requests.get(supermarket['url'], timeout=30)
+                        html_content = resp.text
                     
                     except Timeout as to:
+                        print(to)
                         my_broker.write(ERROR_REQUEST_STREAM_NAME, {'url': supermarket['url'], 'exception': 'request timed out', 'detail': to})
                         continue
 
                     except InvalidURL as iu:
+                        print(iu)
                         my_broker.write(ERROR_REQUEST_STREAM_NAME, {'url': supermarket['url'], 'exception': 'invalid url', 'detail': iu})
                         continue
 
                     except HTTPError as ht:
+                        print(ht)
                         my_broker.write(ERROR_REQUEST_STREAM_NAME, {'url': supermarket['url'], 'exception': 'http error', 'detail': ht})
                         continue
 
                     except Exception as e:
+                        print(e)
                         my_broker.write(ERROR_REQUEST_STREAM_NAME, {'url': supermarket['url'], 'exception': 'uncaught exception', 'detail': e})
                         continue
 
                     category_urls_html = {
                         'supermarket_id': supermarket['supermarket_id'],
-                        'html': resp.text,
+                        'html': html_content,
                         'url': supermarket['url'],
                         'created_at': datetime.now().isoformat(),
                     }

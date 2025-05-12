@@ -25,7 +25,10 @@ CONSUMER_NAME = 'transformer'
 
 PIPELINE_NAME = 'scrape_product_urls'
 SUPERMARKET_ID = SupermarketID.CASA_RICA.value
-BATCH_SIZE = 20
+
+PARALLEL_WORKERS = list(range(9))
+CURSOR_BATCH_SIZE = 100
+WORKER_BATCH_SIZE = 20
 BLOCK_TIME_MS = 1_000
 
 PRODUCT_CONTAINER_TAG = 'div'
@@ -59,47 +62,55 @@ def supermarket_casarica_scrape_product_urls():
 
     @task()
     def extract_product_urls_html():
-        try:
-            hook = PostgresHook(postgres_conn_id=POSTGRES_CONN_ID)
-
-            sql = f'''
-                SELECT supermarket_id, html, url
-                FROM product_urls_html
-                WHERE supermarket_id = {SUPERMARKET_ID}
-                ORDER BY created_at;
-            '''
-
-            results = hook.get_records(sql)
-
-            my_broker = broker.Broker(redis_connection_id=REDIS_CONN_ID)
-            my_broker.create_connection()
-
-            product_urls_html = []
-            
-            for row in results:
-                product_urls_html.append({
-                    'supermarket_id': row[0],
-                    'html': row[1],
-                    'url': row[2],
-                })
-
-            my_broker.write_pipeline(TRANSFORM_STREAM_NAME, *product_urls_html)
+        hook = PostgresHook(postgres_conn_id=POSTGRES_CONN_ID)
         
-        except Exception as e:
-            print(f'[{SUPERMARKET_ID}] - [{PIPELINE_NAME}] - [EXTRACT]')
-            print(e)
-
-        return
-
-
-    @task()
-    def transform_product_urls_html_to_product_urls():
         my_broker = broker.Broker(redis_connection_id=REDIS_CONN_ID)
         my_broker.create_connection()
 
         try:
+            with hook.get_conn() as conn, conn.cursor(name="products_cursor") as cur:
+                cur.itersize = CURSOR_BATCH_SIZE
+                cur.execute(
+                    '''
+                    SELECT supermarket_id, html, url
+                    FROM product_urls_html
+                    WHERE supermarket_id = %s
+                    ORDER BY created_at;
+                    ''',
+                    (SUPERMARKET_ID,),
+                )
+
+                while True:
+                    rows = cur.fetchmany(CURSOR_BATCH_SIZE)
+                    
+                    if not rows:
+                        break
+
+                    product_urls_html = [
+                        {'supermarket_id': row[0], 'html': row[1], 'url': row[2]}
+                        for row in rows
+                    ]
+                    
+                    my_broker.write_pipeline(TRANSFORM_STREAM_NAME, *product_urls_html)
+
+        except Exception as e:
+            print(f'[{SUPERMARKET_ID}] - [{PIPELINE_NAME}] - [EXTRACT]')
+            print(e)
+
+
+    @task()
+    def transform_product_urls_html_to_product_urls(worker_id: int, **context):
+        my_broker = broker.Broker(redis_connection_id=REDIS_CONN_ID)
+        my_broker.create_connection()
+
+        run_id = context['dag_run'].run_id
+        task_instance = context['ti'].dag_id
+
+        worker_name = f"{CONSUMER_NAME}-{run_id}-{task_instance}-{worker_id}".replace('.', '_').replace(':','-')
+        
+        try:
             while True:
-                batch = my_broker.read(TRANSFORM_STREAM_NAME, GROUP_NAME, CONSUMER_NAME, batch_size=BATCH_SIZE, block_time_ms=BLOCK_TIME_MS)        
+                batch = my_broker.read(TRANSFORM_STREAM_NAME, GROUP_NAME, worker_name, batch_size=WORKER_BATCH_SIZE, block_time_ms=BLOCK_TIME_MS)        
             
                 if batch is None:
                     break
@@ -137,7 +148,7 @@ def supermarket_casarica_scrape_product_urls():
     
     setup = setup_transform_stream()
     extract = extract_product_urls_html()
-    transform = transform_product_urls_html_to_product_urls()
+    transform = transform_product_urls_html_to_product_urls.expand(worker_id=PARALLEL_WORKERS)
 
     setup >> extract >> transform
 

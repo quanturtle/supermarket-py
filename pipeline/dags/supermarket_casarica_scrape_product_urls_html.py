@@ -32,7 +32,8 @@ CONSUMER_NAME = 'transformer'
 PIPELINE_NAME = 'scrape_product_urls_html'
 SUPERMARKET_ID = SupermarketID.CASA_RICA.value
 
-BATCH_SIZE = 20
+PARALLEL_WORKERS = list(range(9))
+WORKER_BATCH_SIZE = 20
 BLOCK_TIME_MS = 1_000
 DELAY_SECONDS = 0.5
 
@@ -96,13 +97,18 @@ def supermarket_casarica_scrape_product_urls_html():
 
 
     @task()
-    def transform_category_urls_to_product_urls_html():
+    def transform_category_urls_to_product_urls_html(worker_id: int, **context):
         my_broker = broker.Broker(redis_connection_id=REDIS_CONN_ID)
         my_broker.create_connection()
         
+        run_id = context['dag_run'].run_id
+        task_instance = context['ti'].dag_id
+
+        worker_name = f"{CONSUMER_NAME}-{run_id}-{task_instance}-{worker_id}".replace('.', '_').replace(':','-')
+
         try:
             while True:
-                batch = my_broker.read(TRANSFORM_STREAM_NAME, GROUP_NAME, CONSUMER_NAME, batch_size=BATCH_SIZE, block_time_ms=BLOCK_TIME_MS)        
+                batch = my_broker.read(TRANSFORM_STREAM_NAME, GROUP_NAME, worker_name, batch_size=WORKER_BATCH_SIZE, block_time_ms=BLOCK_TIME_MS)        
             
                 if batch is None:
                     break
@@ -121,53 +127,39 @@ def supermarket_casarica_scrape_product_urls_html():
                             response = requests.get(visiting_url, timeout=30)
                             html_content = response.text
 
-                        except Timeout as to:
-                            print(to)
-                            my_broker.write(ERROR_REQUEST_STREAM_NAME, {'url': visiting_url, 'exception': 'request timed out', 'detail': to})
-                            continue
-
-                        except InvalidURL as iu:
-                            print(iu)
-                            my_broker.write(ERROR_REQUEST_STREAM_NAME, {'url': visiting_url, 'exception': 'invalid url', 'detail': iu})
-                            continue
-
-                        except HTTPError as ht:
-                            print(ht)
-                            my_broker.write(ERROR_REQUEST_STREAM_NAME, {'url': visiting_url, 'exception': 'http error', 'detail': ht})
-                            continue
-
                         except Exception as e:
                             print(e)
-                            my_broker.write(ERROR_REQUEST_STREAM_NAME, {'url': visiting_url, 'exception': 'uncaught exception', 'detail': e})
+                            my_broker.write(ERROR_REQUEST_STREAM_NAME, {'url': visiting_url, 'detail': str(e)})
                             continue
 
-                        soup = BeautifulSoup(html_content, 'html.parser')
-                        
-                        pagination_div = soup.find('div', class_='shop-control-bar-bottom')
-                        pagination_links = pagination_div.find_all('a', href=True)
-
-                        for link in pagination_links:
-                            link_href = link['href'].strip().lower()
-                            next_url = f'https://www.casarica.com.py/{link_href}'
+                        else:
+                            soup = BeautifulSoup(html_content, 'html.parser')
                             
-                            if (PAGINATION_STRING_IN_URL in link_href) \
-                                    and (next_url not in visited_urls) \
-                                    and (link_href != '/catalogos') \
-                                    and (link_href != '/catalogo') \
-                                    and (link_href != 'catalogo') \
-                                    and (not link_href.startswith('/catalogo')) \
-                                    and (not re.search(r'catalogo\.\d+', link_href)):
-                                queue.append(next_url)
-                                visited_urls.add(next_url)
+                            pagination_div = soup.find('div', class_='shop-control-bar-bottom')
+                            pagination_links = pagination_div.find_all('a', href=True)
 
-                        product_urls_html = {
-                            'supermarket_id': category_url['supermarket_id'],
-                            'html': html_content,
-                            'url': visiting_url,
-                            'created_at': datetime.now().isoformat()
-                        }
-                        
-                        product_urls_htmls.append(product_urls_html)
+                            for link in pagination_links:
+                                link_href = link['href'].strip().lower()
+                                next_url = f'https://www.casarica.com.py/{link_href}'
+                                
+                                if (PAGINATION_STRING_IN_URL in link_href) \
+                                        and (next_url not in visited_urls) \
+                                        and (link_href != '/catalogos') \
+                                        and (link_href != '/catalogo') \
+                                        and (link_href != 'catalogo') \
+                                        and (not link_href.startswith('/catalogo')) \
+                                        and (not re.search(r'catalogo\.\d+', link_href)):
+                                    queue.append(next_url)
+                                    visited_urls.add(next_url)
+
+                            product_urls_html = {
+                                'supermarket_id': category_url['supermarket_id'],
+                                'html': html_content,
+                                'url': visiting_url,
+                                'created_at': datetime.now().isoformat()
+                            }
+                            
+                            product_urls_htmls.append(product_urls_html)
 
                     # load
                     my_broker.ack(TRANSFORM_STREAM_NAME, GROUP_NAME, *[category_url['entry_id']])
@@ -182,9 +174,11 @@ def supermarket_casarica_scrape_product_urls_html():
 
     setup = setup_transform_stream()
     extract = extract_category_urls()
-    transform = transform_category_urls_to_product_urls_html()
+    transform = transform_category_urls_to_product_urls_html.expand(worker_id=PARALLEL_WORKERS)
 
     setup >> extract >> transform
 
 
 supermarket_casarica_scrape_product_urls_html()
+
+

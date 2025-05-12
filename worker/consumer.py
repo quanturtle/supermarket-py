@@ -78,14 +78,14 @@ async def process_messages(consumer_name: str, messages: List, logger: logging.L
         model_cls = STREAM_MODEL_MAP.get(stream)
         
         if model_cls is None:
-            logger.warning(f"Unknown stream '{stream}' – skipping.")
+            logger.warning(f"Unknown stream '{stream}' - skipping.")
             continue
 
         for entry_id, fields in entries:
             raw = fields.get("data")
         
             if raw is None:
-                logger.warning(f"{entry_id}: missing 'data' field – skipping/ACKing.")
+                logger.warning(f"{entry_id}: missing 'data' field - skipping/ACKing.")
                 ack_malformed.append(entry_id)
                 continue
 
@@ -97,7 +97,7 @@ async def process_messages(consumer_name: str, messages: List, logger: logging.L
                 ack_success.append(entry_id)
             
             except Exception as e:
-                logger.warning(f"{entry_id}: parse/validation error: {e} – skipping.")
+                logger.warning(f"{entry_id}: parse/validation error: {e} - skipping.")
                 ack_malformed.append(entry_id)
 
     total_inserted = sum(len(entries) for entries in bucket.values())
@@ -167,7 +167,7 @@ async def run_worker(consumer_name: str, shutdown_event: asyncio.Event):
                 pass
             
             except redis.exceptions.ConnectionError as e:
-                logger.error(f"Redis connection error: {e}. Retrying in 5 s…")
+                logger.error(f"Redis connection error: {e}. Retrying in 5 s…")
                 await asyncio.sleep(5)
             
             except Exception:

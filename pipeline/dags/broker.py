@@ -41,9 +41,7 @@ class Broker:
     
 
     def ack(self, stream_name: str, group_name: str, *entry_ids: str):
-        self.conn.xack(stream_name, group_name, *entry_ids)
-    
-        return
+        return self.conn.xack(stream_name, group_name, *entry_ids)
 
 
     def read(self, stream_name: str, group_name: str, consumer_name: str, batch_size: int, block_time_ms: int) -> Optional[List[Dict]]:
@@ -83,13 +81,13 @@ class Broker:
 
         for obj in objs:
             pipeline.xadd(stream_name, {'data': json.dumps(obj)})
-
-        pipeline.execute()
         
-        return
+        return pipeline.execute()
     
 
     def xtrim(self, stream_name: str, stream_len: int):
-        self.conn.xtrim(stream_name, maxlen=stream_len)
+        return self.conn.xtrim(stream_name, maxlen=stream_len)
+    
 
-        return
+    def xdel(self, stream_name: str, *entry_ids: str):
+        return self.conn.xdel(stream_name, *entry_ids)

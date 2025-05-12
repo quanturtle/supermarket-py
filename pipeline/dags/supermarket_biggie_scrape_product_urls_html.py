@@ -9,7 +9,6 @@ import requests
 from constants import *
 from datetime import datetime
 from collections import deque
-from requests.exceptions import Timeout, InvalidURL, HTTPError
 from airflow.decorators import dag, task
 from airflow.providers.postgres.hooks.postgres import PostgresHook
 
@@ -31,7 +30,8 @@ CONSUMER_NAME = 'transformer'
 PIPELINE_NAME = 'scrape_product_urls_html_biggie'
 SUPERMARKET_ID = SupermarketID.BIGGIE.value
 
-BATCH_SIZE = 20
+PARALLEL_WORKERS = list(range(9))
+WORKER_BATCH_SIZE = 20
 BLOCK_TIME_MS = 1_000
 DELAY_SECONDS = 0.5
 
@@ -93,13 +93,18 @@ def supermarket_biggie_scrape_product_urls_html():
 
 
     @task()
-    def transform_category_urls_to_product_urls_html():
+    def transform_category_urls_to_product_urls_html(worker_id: int, **context):
         my_broker = broker.Broker(redis_connection_id=REDIS_CONN_ID)
         my_broker.create_connection()
         
+        run_id = context['dag_run'].run_id
+        task_instance = context['ti'].dag_id
+
+        worker_name = f'{CONSUMER_NAME}-{run_id}-{task_instance}-{worker_id}'.replace('.', '_').replace(':','-')
+
         try:
             while True:
-                batch = my_broker.read(TRANSFORM_STREAM_NAME, GROUP_NAME, CONSUMER_NAME, batch_size=BATCH_SIZE, block_time_ms=BLOCK_TIME_MS)        
+                batch = my_broker.read(TRANSFORM_STREAM_NAME, GROUP_NAME, worker_name, batch_size=WORKER_BATCH_SIZE, block_time_ms=BLOCK_TIME_MS)        
 
                 if batch is None:
                     break
@@ -115,45 +120,31 @@ def supermarket_biggie_scrape_product_urls_html():
                             time.sleep(DELAY_SECONDS)
                             response = requests.get(visiting_url, timeout=30)
                             api_response = response.json()['items']
-                        
-                        except Timeout as to:
-                            print(to)
-                            my_broker.write(ERROR_REQUEST_STREAM_NAME, {'url': visiting_url, 'exception': 'request timed out', 'detail': to})
-                            continue
-
-                        except InvalidURL as iu:
-                            print(iu)
-                            my_broker.write(ERROR_REQUEST_STREAM_NAME, {'url': visiting_url, 'exception': 'invalid url', 'detail': iu})
-                            continue
-
-                        except HTTPError as ht:
-                            print(ht)
-                            my_broker.write(ERROR_REQUEST_STREAM_NAME, {'url': visiting_url, 'exception': 'http error', 'detail': ht})
-                            continue
 
                         except Exception as e:
                             print(e)
-                            my_broker.write(ERROR_REQUEST_STREAM_NAME, {'url': visiting_url, 'exception': 'uncaught exception', 'detail': e})
+                            my_broker.write(ERROR_REQUEST_STREAM_NAME, {'url': visiting_url, 'detail': str(e)})
                             continue
 
-                        if len(api_response) < 1:
-                            break
+                        else:
+                            if len(api_response) < 1:
+                                break
 
-                        product_url_html = {
-                            'supermarket_id': category_url['supermarket_id'],
-                            'html': json.dumps(api_response),
-                            'url': visiting_url,
-                            'created_at': datetime.now().isoformat()
-                        }
+                            product_url_html = {
+                                'supermarket_id': category_url['supermarket_id'],
+                                'html': json.dumps(api_response),
+                                'url': visiting_url,
+                                'created_at': datetime.now().isoformat()
+                            }
 
-                        my_broker.write(OUTPUT_STREAM_NAME, product_url_html)
+                            my_broker.write(OUTPUT_STREAM_NAME, product_url_html)
 
-                        previous_offset = f'skip={OFFSET}'
-                        OFFSET += 50
-                        next_offset = f'skip={OFFSET}'
-                        next_page = visiting_url.replace(previous_offset, next_offset)
+                            previous_offset = f'skip={OFFSET}'
+                            OFFSET += 50
+                            next_offset = f'skip={OFFSET}'
+                            next_page = visiting_url.replace(previous_offset, next_offset)
 
-                        queue.append(next_page)
+                            queue.append(next_page)
 
                     # load
                     my_broker.ack(TRANSFORM_STREAM_NAME, GROUP_NAME, *[category_url['entry_id']])
@@ -167,7 +158,7 @@ def supermarket_biggie_scrape_product_urls_html():
 
     setup = setup_transform_stream()
     extract = extract_category_urls()
-    transform = transform_category_urls_to_product_urls_html()
+    transform = transform_category_urls_to_product_urls_html.expand(worker_id=PARALLEL_WORKERS)
 
     setup >> extract >> transform
 

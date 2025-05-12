@@ -25,7 +25,8 @@ CONSUMER_NAME = 'transformer'
 
 PIPELINE_NAME = 'scrape_category_urls'
 SUPERMARKET_ID = SupermarketID.CASA_RICA.value
-BATCH_SIZE = 20
+
+WORKER_BATCH_SIZE = 20
 BLOCK_TIME_MS = 1_000
 
 CATEGORY_STRING_IN_URL = 'catalogo'
@@ -90,7 +91,7 @@ def supermarket_casarica_scrape_category_urls():
 
         try:
             while True:
-                batch = my_broker.read(TRANSFORM_STREAM_NAME, GROUP_NAME, CONSUMER_NAME, batch_size=BATCH_SIZE, block_time_ms=BLOCK_TIME_MS)        
+                batch = my_broker.read(TRANSFORM_STREAM_NAME, GROUP_NAME, CONSUMER_NAME, batch_size=WORKER_BATCH_SIZE, block_time_ms=BLOCK_TIME_MS)        
             
                 if batch is None:
                     break

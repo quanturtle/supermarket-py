@@ -29,7 +29,8 @@ CONSUMER_NAME = 'transformer'
 PIPELINE_NAME = 'scrape_products_html'
 SUPERMARKET_ID = SupermarketID.CASA_RICA.value
 
-BATCH_SIZE = 20
+PARALLEL_WORKERS = list(range(9))
+WORKER_BATCH_SIZE = 20
 BLOCK_TIME_MS = 1_000
 DELAY_SECONDS = 0.5
 
@@ -91,15 +92,18 @@ def supermarket_casarica_scrape_products_html():
 
 
     @task()
-    def transform_product_urls_to_products_html(worker_id: int):
+    def transform_product_urls_to_products_html(worker_id: int, **context):
         my_broker = broker.Broker(redis_connection_id=REDIS_CONN_ID)
         my_broker.create_connection()
+        
+        run_id = context['dag_run'].run_id
+        task_instance = context['ti'].dag_id
 
-        worker_name = CONSUMER_NAME + f'-{worker_id}'
-
+        worker_name = f"{CONSUMER_NAME}-{run_id}-{task_instance}-{worker_id}".replace('.', '_').replace(':','-')
+        
         try:
             while True:
-                batch = my_broker.read(TRANSFORM_STREAM_NAME, GROUP_NAME, worker_name, batch_size=BATCH_SIZE, block_time_ms=BLOCK_TIME_MS)        
+                batch = my_broker.read(TRANSFORM_STREAM_NAME, GROUP_NAME, worker_name, batch_size=WORKER_BATCH_SIZE, block_time_ms=BLOCK_TIME_MS)        
             
                 if batch is None:
                     break
@@ -109,37 +113,23 @@ def supermarket_casarica_scrape_products_html():
                         time.sleep(DELAY_SECONDS)
                         response = requests.get(product_url['url'], timeout=30)
                         html_content = response.text
-                    
-                    except Timeout as to:
-                        print(to)
-                        my_broker.write(ERROR_REQUEST_STREAM_NAME, {'url': product_url['url'], 'exception': 'request timed out', 'detail': to})
-                        continue
-
-                    except InvalidURL as iu:
-                        print(iu)
-                        my_broker.write(ERROR_REQUEST_STREAM_NAME, {'url': product_url['url'], 'exception': 'invalid url', 'detail': iu})
-                        continue
-
-                    except HTTPError as ht:
-                        print(ht)
-                        my_broker.write(ERROR_REQUEST_STREAM_NAME, {'url': product_url['url'], 'exception': 'http error', 'detail': ht})
-                        continue
 
                     except Exception as e:
                         print(e)
-                        my_broker.write(ERROR_REQUEST_STREAM_NAME, {'url': product_url['url'], 'exception': 'uncaught exception', 'detail': e})
+                        my_broker.write(ERROR_REQUEST_STREAM_NAME, {'url': product_url['url'], 'detail': str(e)})
                         continue
 
-                    product_html = {
-                        'supermarket_id': product_url['supermarket_id'],
-                        'html': html_content,
-                        'url': product_url['url'],
-                        'created_at': datetime.now().isoformat()
-                    }
+                    else:
+                        product_html = {
+                            'supermarket_id': product_url['supermarket_id'],
+                            'html': html_content,
+                            'url': product_url['url'],
+                            'created_at': datetime.now().isoformat()
+                        }
 
-                    # load
-                    my_broker.ack(TRANSFORM_STREAM_NAME, GROUP_NAME, *[product_url['entry_id']])
-                    my_broker.write(OUTPUT_STREAM_NAME, product_html)
+                        # load
+                        my_broker.ack(TRANSFORM_STREAM_NAME, GROUP_NAME, *[product_url['entry_id']])
+                        my_broker.write(OUTPUT_STREAM_NAME, product_html)
         
         except Exception as e:
             print(f'[{SUPERMARKET_ID}] - [{PIPELINE_NAME}] - [TRANSFORM]')
@@ -150,7 +140,7 @@ def supermarket_casarica_scrape_products_html():
 
     setup = setup_transform_stream()
     extract = extract_product_urls()
-    transform = transform_product_urls_to_products_html()
+    transform = transform_product_urls_to_products_html.expand(worker_id=PARALLEL_WORKERS)
 
     setup >> extract >> transform
 

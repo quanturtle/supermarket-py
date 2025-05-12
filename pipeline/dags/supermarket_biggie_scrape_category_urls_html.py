@@ -85,7 +85,7 @@ def supermarket_biggie_scrape_category_urls_html():
 
 
     @task()
-    def transform_supermarkets_to_category_urls_html(worker_id: int):
+    def transform_supermarkets_to_category_urls_html():
         my_broker = broker.Broker(redis_connection_id=REDIS_CONN_ID)
         my_broker.create_connection()
 

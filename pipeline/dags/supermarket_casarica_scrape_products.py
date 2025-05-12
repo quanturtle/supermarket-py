@@ -25,7 +25,9 @@ CONSUMER_NAME = 'transformer'
 
 PIPELINE_NAME = 'scrape_products'
 SUPERMARKET_ID = SupermarketID.CASA_RICA.value
-CURSOR_BATCH_SIZE = 500
+
+PARALLEL_WORKERS = list(range(9))
+CURSOR_BATCH_SIZE = 100
 WORKER_BATCH_SIZE = 20
 BLOCK_TIME_MS = 1_000
 
@@ -105,13 +107,18 @@ def supermarket_casarica_scrape_products():
 
 
     @task()
-    def transform_products_html_to_products():
+    def transform_products_html_to_products(worker_id: int, **context):
         my_broker = broker.Broker(redis_connection_id=REDIS_CONN_ID)
         my_broker.create_connection()
 
+        run_id = context['dag_run'].run_id
+        task_instance = context['ti'].dag_id
+
+        worker_name = f"{CONSUMER_NAME}-{run_id}-{task_instance}-{worker_id}".replace('.', '_').replace(':','-')
+
         try:
             while True:
-                batch = my_broker.read(TRANSFORM_STREAM_NAME, GROUP_NAME, CONSUMER_NAME, batch_size=WORKER_BATCH_SIZE, block_time_ms=BLOCK_TIME_MS)        
+                batch = my_broker.read(TRANSFORM_STREAM_NAME, GROUP_NAME, worker_name, batch_size=WORKER_BATCH_SIZE, block_time_ms=BLOCK_TIME_MS)        
             
                 if batch is None:
                     break
@@ -142,7 +149,7 @@ def supermarket_casarica_scrape_products():
                         ).text.strip().upper()
                     
                     except:
-                        product_description = product_html.get('description', '')
+                        product_description = ''
 
                     try:
                         product_sku = product_details_container.find(
@@ -166,10 +173,10 @@ def supermarket_casarica_scrape_products():
                             product_price = int(product_price) if product_price else 0
                         
                         else:
-                            product_price = None
+                            product_price = 0
                     
                     except:
-                        product_price = None
+                        product_price = 0
                     
                     product = {
                         'supermarket_id': product_html['supermarket_id'],
@@ -193,7 +200,7 @@ def supermarket_casarica_scrape_products():
 
     setup = setup_transform_stream()
     extract = extract_products_html()    
-    transform = transform_products_html_to_products()
+    transform = transform_products_html_to_products(worker_id=PARALLEL_WORKERS)
 
     setup >> extract >> transform
 

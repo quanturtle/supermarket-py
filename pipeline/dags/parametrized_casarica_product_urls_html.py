@@ -1,5 +1,5 @@
 '''
-# supermarket_casarica_urls_html
+# parametrized_casarica_product_urls_html
 CATEGORY_URLS --> PRODUCT_URLS_HTML
 '''
 import re
@@ -41,60 +41,11 @@ PAGINATION_STRING_IN_URL = 'catalogo'
 
 @dag(
     default_args=DEFAULT_ARGS,
-    tags=['casarica', 'etl'],
+    tags=['casarica', 'parametrized'],
     catchup=False,
     doc_md=__doc__
 )
-def supermarket_casarica_product_urls_html():
-    @task()
-    def setup_transform_stream():
-        try:
-            my_broker = broker.Broker(redis_connection_id=REDIS_CONN_ID)
-            my_broker.create_connection()
-            
-            my_broker.create_xgroup(TRANSFORM_STREAM_NAME, GROUP_NAME)
-        
-        except Exception as e:
-            print(f'[{SUPERMARKET_ID}] - [{PIPELINE_NAME}] - [SETUP]')
-            print(e)
-
-        return
-    
-    
-    @task()
-    def extract_category_urls():
-        try:
-            hook = PostgresHook(postgres_conn_id=POSTGRES_CONN_ID)
-
-            sql = f'''
-                SELECT supermarket_id, url
-                FROM category_urls
-                WHERE supermarket_id = {SUPERMARKET_ID}
-                ORDER BY created_at;
-            '''
-
-            results = hook.get_records(sql)
-
-            my_broker = broker.Broker(redis_connection_id=REDIS_CONN_ID)
-            my_broker.create_connection()
-
-            category_urls = []
-            
-            for row in results:
-                category_urls.append({
-                    'supermarket_id': row[0],
-                    'url': row[1]
-                })
-            
-            my_broker.write_pipeline(TRANSFORM_STREAM_NAME, *category_urls)
-        
-        except Exception as e:
-            print(f'[{SUPERMARKET_ID}] - [{PIPELINE_NAME}] - [EXTRACT]')
-            print(e)
-        
-        return
-
-
+def parametrized_casarica_scrape_product_urls_html():
     @task()
     def transform_category_urls_to_product_urls_html(worker_id: int, **context):
         my_broker = broker.Broker(redis_connection_id=REDIS_CONN_ID)
@@ -171,11 +122,9 @@ def supermarket_casarica_product_urls_html():
         return
 
 
-    setup = setup_transform_stream()
-    extract = extract_category_urls()
     transform = transform_category_urls_to_product_urls_html.expand(worker_id=PARALLEL_WORKERS)
 
-    setup >> extract >> transform
+    transform
 
 
-supermarket_casarica_product_urls_html()
+parametrized_casarica_scrape_product_urls_html()

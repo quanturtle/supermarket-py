@@ -1,5 +1,5 @@
 '''
-# supermarket_casarica_product_urls
+# parametrized_casarica_product_urls
 PRODUCT_URLS_HTML --> PRODUCT_URLS
 '''
 import broker
@@ -40,64 +40,11 @@ DESCRIPTION_CLASS = 'ecommercepro-loop-product__title'
 
 @dag(
     default_args=DEFAULT_ARGS,
-    tags=['casarica', 'etl'],
+    tags=['casarica', 'parametrized'],
     catchup=False,
     doc_md=__doc__
 )
-def supermarket_casarica_product_urls():
-    @task()
-    def setup_transform_stream():
-        try:
-            my_broker = broker.Broker(redis_connection_id=REDIS_CONN_ID)
-            my_broker.create_connection()
-            
-            my_broker.create_xgroup(TRANSFORM_STREAM_NAME, GROUP_NAME)
-        
-        except Exception as e:
-            print(f'[{SUPERMARKET_ID}] - [{PIPELINE_NAME}] - [SETUP]')
-            print(e)
-
-        return
-
-
-    @task()
-    def extract_product_urls_html():
-        hook = PostgresHook(postgres_conn_id=POSTGRES_CONN_ID)
-        
-        my_broker = broker.Broker(redis_connection_id=REDIS_CONN_ID)
-        my_broker.create_connection()
-
-        try:
-            with hook.get_conn() as conn, conn.cursor(name="products_cursor") as cur:
-                cur.itersize = CURSOR_BATCH_SIZE
-                cur.execute(
-                    '''
-                    SELECT supermarket_id, html, url
-                    FROM product_urls_html
-                    WHERE supermarket_id = %s
-                    ORDER BY created_at;
-                    ''',
-                    (SUPERMARKET_ID,),
-                )
-
-                while True:
-                    rows = cur.fetchmany(CURSOR_BATCH_SIZE)
-                    
-                    if not rows:
-                        break
-
-                    product_urls_html = [
-                        {'supermarket_id': row[0], 'html': row[1], 'url': row[2]}
-                        for row in rows
-                    ]
-                    
-                    my_broker.write_pipeline(TRANSFORM_STREAM_NAME, *product_urls_html)
-
-        except Exception as e:
-            print(f'[{SUPERMARKET_ID}] - [{PIPELINE_NAME}] - [EXTRACT]')
-            print(e)
-
-
+def parametrized_casarica_scrape_product_urls():
     @task()
     def transform_product_urls_html_to_product_urls(worker_id: int, **context):
         my_broker = broker.Broker(redis_connection_id=REDIS_CONN_ID)
@@ -146,11 +93,9 @@ def supermarket_casarica_product_urls():
         return
 
     
-    setup = setup_transform_stream()
-    extract = extract_product_urls_html()
     transform = transform_product_urls_html_to_product_urls.expand(worker_id=PARALLEL_WORKERS)
 
-    setup >> extract >> transform
+    transform
 
 
-supermarket_casarica_product_urls()
+parametrized_casarica_scrape_product_urls()

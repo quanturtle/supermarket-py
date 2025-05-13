@@ -1,5 +1,5 @@
 '''
-# supermarket_superseis_scrape_products_html
+# supermarket_superseis_products_html
 PRODUCT_URLS --> PRODUCTS_HTML
 '''
 import time
@@ -7,7 +7,6 @@ import broker
 import requests
 from constants import *
 from datetime import datetime
-from requests.exceptions import Timeout, InvalidURL, HTTPError
 from airflow.decorators import dag, task
 from airflow.providers.postgres.hooks.postgres import PostgresHook
 
@@ -41,7 +40,7 @@ DELAY_SECONDS = 0.5
     catchup=False,
     doc_md=__doc__
 )
-def supermarket_superseis_scrape_products_html():
+def supermarket_superseis_products_html():
     @task()
     def setup_transform_stream():
         try:
@@ -145,4 +144,4 @@ def supermarket_superseis_scrape_products_html():
     setup >> extract >> transform
 
 
-supermarket_superseis_scrape_products_html()
+supermarket_superseis_products_html()

@@ -1,5 +1,5 @@
 '''
-# supermarket_biggie_scrape_category_urls
+# supermarket_biggie_category_urls
 SUPERMARKETS --> CATEGORY_URLS_HTML
 '''
 from datetime import datetime
@@ -34,7 +34,7 @@ BLOCK_TIME_MS = 1_000
     catchup=False,
     doc_md=__doc__
 )
-def supermarket_biggie_scrape_category_urls():
+def supermarket_biggie_category_urls():
     @task()
     def setup_transform_stream():
         try:
@@ -131,4 +131,4 @@ def supermarket_biggie_scrape_category_urls():
     setup >> extract >> transform
 
 
-supermarket_biggie_scrape_category_urls()
+supermarket_biggie_category_urls()

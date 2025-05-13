@@ -1,5 +1,5 @@
 '''
-# supermarket_superseis_scrape_category_urls
+# supermarket_superseis_category_urls
 CATEGORY_URLS_HTML --> CATEGORY_URLS
 '''
 import broker
@@ -37,7 +37,7 @@ CATEGORY_STRING_IN_URL = 'category'
     catchup=False,
     doc_md=__doc__
 )
-def supermarket_superseis_scrape_category_urls():
+def supermarket_superseis_category_urls():
     @task()
     def setup_transform_stream():
         try:
@@ -130,4 +130,4 @@ def supermarket_superseis_scrape_category_urls():
     setup >> extract >> transform
 
 
-supermarket_superseis_scrape_category_urls()
+supermarket_superseis_category_urls()

@@ -1,5 +1,5 @@
 '''
-# supermarket_superseis_scrape_products
+# supermarket_superseis_products
 PRODUCTS_HTML --> PRODUCTS
 '''
 import broker
@@ -53,7 +53,7 @@ PRODUCT_PRICE_ATTRS = [{'itemprop': 'price'}, '']
     catchup=False,
     doc_md=__doc__
 )
-def supermarket_superseis_scrape_products():
+def supermarket_superseis_products():
     @task()
     def setup_transform_stream():
         try:
@@ -210,4 +210,4 @@ def supermarket_superseis_scrape_products():
     setup >> extract >> transform
 
 
-supermarket_superseis_scrape_products()
+supermarket_superseis_products()

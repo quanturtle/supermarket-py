@@ -1,5 +1,5 @@
 '''
-# supermarket_superseis_scrape_category_urls_html
+# supermarket_superseis_category_urls_html
 SUPERMARKETS --> CATEGORY_URLS_HTML
 '''
 import time
@@ -41,7 +41,7 @@ DELAY_SECONDS = 0.5
     catchup=False,
     doc_md=__doc__
 )
-def supermarket_superseis_scrape_category_urls_html():
+def supermarket_superseis_category_urls_html():
     @task()
     def setup_transform_stream():
         try:
@@ -146,4 +146,4 @@ def supermarket_superseis_scrape_category_urls_html():
     setup >> extract >> transform
 
 
-supermarket_superseis_scrape_category_urls_html()
+supermarket_superseis_category_urls_html()

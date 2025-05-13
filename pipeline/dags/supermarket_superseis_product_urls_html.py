@@ -1,5 +1,5 @@
 '''
-# supermarket_superseis_scrape_product_urls_html
+# supermarket_superseis_product_urls_html
 CATEGORY_URLS --> PRODUCT_URLS_HTML
 '''
 import time
@@ -44,7 +44,7 @@ PAGINATION_STRING_IN_URL = 'pageindex'
     catchup=False,
     doc_md=__doc__
 )
-def supermarket_superseis_scrape_product_urls_html():
+def supermarket_superseis_product_urls_html():
     @task()
     def setup_transform_stream():
         try:
@@ -167,4 +167,4 @@ def supermarket_superseis_scrape_product_urls_html():
     setup >> extract >> transform
 
 
-supermarket_superseis_scrape_product_urls_html()
+supermarket_superseis_product_urls_html()

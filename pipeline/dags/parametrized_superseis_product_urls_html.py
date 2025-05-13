@@ -1,8 +1,7 @@
 '''
-# supermarket_casarica_urls_html
+# parametrized_superseis_product_urls_html
 CATEGORY_URLS --> PRODUCT_URLS_HTML
 '''
-import re
 import time
 import broker
 import requests
@@ -23,78 +22,29 @@ POSTGRES_CONN_ID = 'my-db'
 REDIS_CONN_ID = 'my-redis'
 
 OUTPUT_STREAM_NAME = 'product_urls_html_stream'
-TRANSFORM_STREAM_NAME = 'casarica_transform_product_urls_html_stream'
+TRANSFORM_STREAM_NAME = 'superseis_transform_product_urls_html_stream'
 ERROR_REQUEST_STREAM_NAME = 'error_request_stream'
 GROUP_NAME = 'product_db_inserters'
 CONSUMER_NAME = 'transformer'
 
 PIPELINE_NAME = 'scrape_product_urls_html'
-SUPERMARKET_ID = SupermarketID.CASA_RICA.value
+SUPERMARKET_ID = SupermarketID.SUPERSEIS.value
 
 PARALLEL_WORKERS = list(range(9))
 WORKER_BATCH_SIZE = 20
 BLOCK_TIME_MS = 1_000
 DELAY_SECONDS = 0.5
 
-PAGINATION_STRING_IN_URL = 'catalogo'
+PAGINATION_STRING_IN_URL = 'pageindex'
 
 
 @dag(
     default_args=DEFAULT_ARGS,
-    tags=['casarica', 'etl'],
+    tags=['superseis', 'parametrized'],
     catchup=False,
     doc_md=__doc__
 )
-def supermarket_casarica_product_urls_html():
-    @task()
-    def setup_transform_stream():
-        try:
-            my_broker = broker.Broker(redis_connection_id=REDIS_CONN_ID)
-            my_broker.create_connection()
-            
-            my_broker.create_xgroup(TRANSFORM_STREAM_NAME, GROUP_NAME)
-        
-        except Exception as e:
-            print(f'[{SUPERMARKET_ID}] - [{PIPELINE_NAME}] - [SETUP]')
-            print(e)
-
-        return
-    
-    
-    @task()
-    def extract_category_urls():
-        try:
-            hook = PostgresHook(postgres_conn_id=POSTGRES_CONN_ID)
-
-            sql = f'''
-                SELECT supermarket_id, url
-                FROM category_urls
-                WHERE supermarket_id = {SUPERMARKET_ID}
-                ORDER BY created_at;
-            '''
-
-            results = hook.get_records(sql)
-
-            my_broker = broker.Broker(redis_connection_id=REDIS_CONN_ID)
-            my_broker.create_connection()
-
-            category_urls = []
-            
-            for row in results:
-                category_urls.append({
-                    'supermarket_id': row[0],
-                    'url': row[1]
-                })
-            
-            my_broker.write_pipeline(TRANSFORM_STREAM_NAME, *category_urls)
-        
-        except Exception as e:
-            print(f'[{SUPERMARKET_ID}] - [{PIPELINE_NAME}] - [EXTRACT]')
-            print(e)
-        
-        return
-
-
+def parametrized_superseis_scrape_product_urls_html():
     @task()
     def transform_category_urls_to_product_urls_html(worker_id: int, **context):
         my_broker = broker.Broker(redis_connection_id=REDIS_CONN_ID)
@@ -103,7 +53,7 @@ def supermarket_casarica_product_urls_html():
         run_id = context['dag_run'].run_id
         task_instance = context['ti'].dag_id
 
-        worker_name = f"{CONSUMER_NAME}-{run_id}-{task_instance}-{worker_id}".replace('.', '_').replace(':','-')
+        worker_name = f'{CONSUMER_NAME}-{run_id}-{task_instance}-{worker_id}'.replace('.', '_').replace(':','-')
 
         try:
             while True:
@@ -134,22 +84,12 @@ def supermarket_casarica_product_urls_html():
                         else:
                             soup = BeautifulSoup(html_content, 'html.parser')
                             
-                            pagination_div = soup.find('div', class_='shop-control-bar-bottom')
-                            pagination_links = pagination_div.find_all('a', href=True)
+                            links = soup.find_all('a', href=True)
 
-                            for link in pagination_links:
-                                link_href = link['href'].strip().lower()
-                                next_url = f'https://www.casarica.com.py/{link_href}'
-                                
-                                if (PAGINATION_STRING_IN_URL in link_href) \
-                                        and (next_url not in visited_urls) \
-                                        and (link_href != '/catalogos') \
-                                        and (link_href != '/catalogo') \
-                                        and (link_href != 'catalogo') \
-                                        and (not link_href.startswith('/catalogo')) \
-                                        and (not re.search(r'catalogo\.\d+', link_href)):
-                                    queue.append(next_url)
-                                    visited_urls.add(next_url)
+                            for link in links:
+                                if (PAGINATION_STRING_IN_URL in link['href'].lower()) and (link['href'] not in visited_urls):
+                                    queue.append(link['href'])
+                                    visited_urls.add(link['href'])
 
                             product_urls_html = {
                                 'supermarket_id': category_url['supermarket_id'],
@@ -157,7 +97,7 @@ def supermarket_casarica_product_urls_html():
                                 'url': visiting_url,
                                 'created_at': datetime.now().isoformat()
                             }
-                            
+
                             product_urls_htmls.append(product_urls_html)
 
                     # load
@@ -171,11 +111,9 @@ def supermarket_casarica_product_urls_html():
         return
 
 
-    setup = setup_transform_stream()
-    extract = extract_category_urls()
     transform = transform_category_urls_to_product_urls_html.expand(worker_id=PARALLEL_WORKERS)
 
-    setup >> extract >> transform
+    transform
 
 
-supermarket_casarica_product_urls_html()
+parametrized_superseis_scrape_product_urls_html()

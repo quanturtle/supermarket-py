@@ -1,5 +1,5 @@
 '''
-# supermarket_casarica_products
+# parametrized_casarica_products
 PRODUCTS_HTML --> PRODUCTS
 '''
 import broker
@@ -48,64 +48,11 @@ PRODUCT_PRICE_ATTRS = [{}, {'id': 'producto-precio'}]
 
 @dag(
     default_args=DEFAULT_ARGS,
-    tags=['casarica', 'etl'],
+    tags=['casarica', 'parametrized'],
     catchup=False,
     doc_md=__doc__
 )
-def supermarket_casarica_products():
-    @task()
-    def setup_transform_stream():
-        try:
-            my_broker = broker.Broker(redis_connection_id=REDIS_CONN_ID)
-            my_broker.create_connection()
-            
-            my_broker.create_xgroup(TRANSFORM_STREAM_NAME, GROUP_NAME)
-
-        except Exception as e:
-            print(f'[{SUPERMARKET_ID}] - [{PIPELINE_NAME}] - [SETUP]')
-            print(e)
-
-        return
-    
-
-    @task()
-    def extract_products_html():
-        hook = PostgresHook(postgres_conn_id=POSTGRES_CONN_ID)
-        
-        my_broker = broker.Broker(redis_connection_id=REDIS_CONN_ID)
-        my_broker.create_connection()
-
-        try:
-            with hook.get_conn() as conn, conn.cursor(name="products_cursor") as cur:
-                cur.itersize = CURSOR_BATCH_SIZE
-                cur.execute(
-                    '''
-                    SELECT supermarket_id, html, url
-                    FROM products_html
-                    WHERE supermarket_id = %s
-                    ORDER BY created_at
-                    ''',
-                    (SUPERMARKET_ID,),
-                )
-
-                while True:
-                    rows = cur.fetchmany(CURSOR_BATCH_SIZE)
-                    
-                    if not rows:
-                        break
-
-                    products_htmls = [
-                        {'supermarket_id': row[0], 'html': row[1], 'url': row[2]}
-                        for row in rows
-                    ]
-                    
-                    my_broker.write_pipeline(TRANSFORM_STREAM_NAME, *products_htmls)
-
-        except Exception as e:
-            print(f'[{SUPERMARKET_ID}] - [{PIPELINE_NAME}] - [EXTRACT]')
-            print(e)
-
-
+def parametrized_casarica_scrape_products():
     @task()
     def transform_products_html_to_products(worker_id: int, **context):
         my_broker = broker.Broker(redis_connection_id=REDIS_CONN_ID)
@@ -197,12 +144,10 @@ def supermarket_casarica_products():
                 
         return
 
-
-    setup = setup_transform_stream()
-    extract = extract_products_html()    
+ 
     transform = transform_products_html_to_products(worker_id=PARALLEL_WORKERS)
 
-    setup >> extract >> transform
+    transform
 
 
-supermarket_casarica_products()
+parametrized_casarica_scrape_products()

@@ -1,5 +1,5 @@
 '''
-# supermarket_casarica_scrape_category_urls
+# supermarket_casarica_category_urls
 CATEGORY_URLS_HTML --> CATEGORY_URLS
 '''
 import broker
@@ -38,7 +38,7 @@ CATEGORY_STRING_IN_URL = 'catalogo'
     catchup=False,
     doc_md=__doc__
 )
-def supermarket_casarica_scrape_category_urls():
+def supermarket_casarica_category_urls():
     @task()
     def setup_transform_stream():
         try:
@@ -130,4 +130,4 @@ def supermarket_casarica_scrape_category_urls():
 
     setup >> extract >> transform
 
-supermarket_casarica_scrape_category_urls()
+supermarket_casarica_category_urls()
